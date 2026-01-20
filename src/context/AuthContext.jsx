@@ -351,6 +351,12 @@ export function AuthProvider({ children }) {
                         setLoading(false);
                     }, (error) => {
                         console.error("Auth Error:", error);
+                        // Show alert only for critical errors to help debugging
+                        if (error.code === 'permission-denied') {
+                            alert('⚠️ 데이터 접근 권한이 없습니다. (Firestore Security Rules)\n잠시 후 다시 시도하거나, 앱을 새로고침 해주세요.');
+                        } else {
+                            alert('⚠️ 로그인 오류: ' + error.message);
+                        }
                         setLoading(false);
                     });
                 } else {
