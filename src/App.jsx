@@ -1075,7 +1075,8 @@ const App = () => {
                   <>
                     {/* Show invite code only if not connected */}
                     {/* Show invite code only if not connected */}
-                    {settings.inviteCode && (
+                    {/* Show invite code or generate button */}
+                    {settings.inviteCode ? (
                       <div className="flex items-center justify-between mb-4 bg-white p-3 rounded-xl border border-gray-200">
                         <span className="text-secondary text-sm font-medium">내 초대 코드</span>
                         <div className="flex items-center gap-2">
@@ -1084,7 +1085,7 @@ const App = () => {
                             type="button"
                             onClick={async () => {
                               if (confirm('초대 코드를 새로 발급하시겠습니까?\n이전 코드는 사용할 수 없게 됩니다.')) {
-                                await regenerateInviteCode();
+                                await generateInviteCode();
                               }
                             }}
                             className="p-1.5 text-gray-400 hover:text-theme-500 hover:bg-theme-50 rounded-full transition-colors"
@@ -1093,6 +1094,17 @@ const App = () => {
                             <Icon name="refresh-cw" size={14} />
                           </button>
                         </div>
+                      </div>
+                    ) : (
+                      <div className="mb-4">
+                        <button
+                          type="button"
+                          onClick={generateInviteCode}
+                          className="w-full py-3 rounded-xl border-2 border-dashed border-theme-300 text-theme-600 font-bold hover:bg-theme-50 transition-all flex items-center justify-center gap-2"
+                        >
+                          <Icon name="plus" size={16} /> 초대 코드 발급받기
+                        </button>
+                        <p className="text-xs text-center text-gray-400 mt-2">상대방에게 공유할 코드를 생성합니다.</p>
                       </div>
                     )}
                     <div className="flex gap-2">
