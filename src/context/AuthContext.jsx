@@ -326,28 +326,48 @@ export function AuthProvider({ children }) {
         }
     }
 
-    // ========== AUTH STATE LISTENER ==========
+    // ========== AUTH STATE OBSERVER ==========
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        let unsubscribeUserDoc;
+
+        const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
             setCurrentUser(user);
 
-            if (user && !isAdmin) {
-                try {
-                    const userRef = doc(db, 'users', user.uid);
-                    const userSnap = await getDoc(userRef);
-                    if (userSnap.exists()) {
-                        setUserData({ ...userSnap.data(), uid: user.uid });
-                    }
-                } catch (e) {
-                    console.error("Error fetching user data:", e);
-                }
-            } else if (!user && !isAdmin) {
-                setUserData(null);
+            // Cleanup previous listener if any
+            if (unsubscribeUserDoc) {
+                unsubscribeUserDoc();
+                unsubscribeUserDoc = null;
             }
 
-            setLoading(false);
+            if (user) {
+                if (!isAdmin) {
+                    // Real-time subscription to user data
+                    unsubscribeUserDoc = onSnapshot(doc(db, 'users', user.uid), (docSnap) => {
+                        if (docSnap.exists()) {
+                            setUserData({ ...docSnap.data(), uid: user.uid });
+                        }
+                        // If doc doesn't exist yet (e.g. during signup), we wait.
+                        // setLoading(false) is called inside to ensure we have data or at least tried.
+                        setLoading(false);
+                    }, (error) => {
+                        console.error("Auth Error:", error);
+                        setLoading(false);
+                    });
+                } else {
+                    // Admin mode
+                    setLoading(false);
+                }
+            } else {
+                // Logged out
+                setUserData(null);
+                setLoading(false);
+            }
         });
-        return unsubscribe;
+
+        return () => {
+            unsubscribeAuth();
+            if (unsubscribeUserDoc) unsubscribeUserDoc();
+        };
     }, [isAdmin]);
 
     const value = {
