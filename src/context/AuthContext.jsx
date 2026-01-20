@@ -182,11 +182,12 @@ export function AuthProvider({ children }) {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             setCurrentUser(user);
             if (user) {
+                // Only fetch from Firestore if userData is not already set (e.g., from signup/login)
                 try {
                     const docRef = doc(db, 'users', user.uid);
                     const docSnap = await getDoc(docRef);
                     if (docSnap.exists()) {
-                        setUserData(docSnap.data());
+                        setUserData({ ...docSnap.data(), uid: user.uid }); // Include uid!
                     }
                 } catch (e) {
                     console.error("Error fetching user data:", e);
