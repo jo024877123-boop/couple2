@@ -1,0 +1,23 @@
+
+/* Missing Utility Classes */
+.gradient-theme {
+  background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+  color: white !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.shadow-theme {
+  box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.25);
+}
+
+/* Dark Theme Button Fix (Ensure dark background for white text) */
+[data-theme="dark"] .gradient-theme {
+  background: linear-gradient(135deg, #475569, #334155);
+  color: white !important;
+}
+
+/* Simple Theme Button Fix */
+[data-theme="simple"] .gradient-theme {
+  background: linear-gradient(135deg, #171717, #404040);
+  color: white !important;
+}
