@@ -1078,30 +1078,30 @@ const App = () => {
       }
 
       {/* 모바일 하단 네비 */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 glass border-t border-theme-100 z-40 pb-safe">
-        <div className="flex justify-around items-end pb-2 h-16 px-1">
-          <button onClick={() => setActiveTab('feed')} className={`flex flex-col items-center gap-0.5 p-2 w-14 transition-colors ${activeTab === 'feed' ? 'text-theme-500' : 'text-secondary'}`}>
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-theme-100 z-40 pb-safe shadow-lg">
+        <div className="flex justify-around items-end pb-1.5 pt-1 h-[68px] px-1">
+          <button onClick={() => setActiveTab('feed')} className={`flex flex-col items-center justify-center gap-0.5 min-w-[52px] py-1.5 px-2 rounded-xl transition-all ${activeTab === 'feed' ? 'text-theme-500 bg-theme-50' : 'text-gray-400'}`}>
             <Icon name="layout-grid" size={22} fill={activeTab === 'feed'} />
-            <span className="text-[9px] font-bold">타임라인</span>
+            <span className="text-[10px] font-bold truncate max-w-[48px]">{settings.customTabs?.feed || '타임라인'}</span>
           </button>
-          <button onClick={() => setActiveTab('gallery')} className={`flex flex-col items-center gap-0.5 p-2 w-14 transition-colors ${activeTab === 'gallery' ? 'text-theme-500' : 'text-secondary'}`}>
+          <button onClick={() => setActiveTab('gallery')} className={`flex flex-col items-center justify-center gap-0.5 min-w-[52px] py-1.5 px-2 rounded-xl transition-all ${activeTab === 'gallery' ? 'text-theme-500 bg-theme-50' : 'text-gray-400'}`}>
             <Icon name="image" size={22} fill={activeTab === 'gallery'} />
-            <span className="text-[9px] font-bold">갤러리</span>
+            <span className="text-[10px] font-bold truncate max-w-[48px]">{settings.customTabs?.gallery || '갤러리'}</span>
           </button>
 
-          <div className="relative -top-5">
-            <button onClick={handleModalOpen} className="gradient-theme text-white w-14 h-14 rounded-full flex items-center justify-center shadow-theme border-4 border-white active:scale-95 transition-transform">
+          <div className="relative -top-4">
+            <button onClick={handleModalOpen} className="gradient-theme text-white w-14 h-14 rounded-full flex items-center justify-center shadow-xl border-4 border-white active:scale-90 transition-transform">
               <Icon name="plus" size={26} strokeWidth={2.5} />
             </button>
           </div>
 
-          <button onClick={() => setActiveTab('checklist')} className={`flex flex-col items-center gap-0.5 p-2 w-14 transition-colors ${activeTab === 'checklist' ? 'text-theme-500' : 'text-secondary'}`}>
+          <button onClick={() => setActiveTab('checklist')} className={`flex flex-col items-center justify-center gap-0.5 min-w-[52px] py-1.5 px-2 rounded-xl transition-all ${activeTab === 'checklist' ? 'text-theme-500 bg-theme-50' : 'text-gray-400'}`}>
             <Icon name="check-square" size={22} fill={activeTab === 'checklist'} />
-            <span className="text-[9px] font-bold">체크</span>
+            <span className="text-[10px] font-bold truncate max-w-[48px]">{settings.customTabs?.checklist || '체크'}</span>
           </button>
-          <button onClick={() => setActiveTab('calendar')} className={`flex flex-col items-center gap-0.5 p-2 w-14 transition-colors ${activeTab === 'calendar' ? 'text-theme-500' : 'text-secondary'}`}>
+          <button onClick={() => setActiveTab('calendar')} className={`flex flex-col items-center justify-center gap-0.5 min-w-[52px] py-1.5 px-2 rounded-xl transition-all ${activeTab === 'calendar' ? 'text-theme-500 bg-theme-50' : 'text-gray-400'}`}>
             <Icon name="calendar-days" size={22} fill={activeTab === 'calendar'} />
-            <span className="text-[9px] font-bold">기념일</span>
+            <span className="text-[10px] font-bold truncate max-w-[48px]">{settings.customTabs?.calendar || '기념일'}</span>
           </button>
         </div>
       </nav>
@@ -1414,6 +1414,38 @@ const App = () => {
                 <InputField label="상대방 이름" value={settings.partnerName} onChange={v => setSettings({ ...settings, partnerName: v })} />
               </div>
               <InputField label="시작한 날" type="date" value={settings.anniversaryDate} onChange={v => setSettings({ ...settings, anniversaryDate: v })} icon="heart" />
+
+              {/* 탭 이름 커스터마이징 */}
+              <details className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+                <summary className="font-bold text-sm text-gray-800 cursor-pointer flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-theme-100 text-theme-600 flex items-center justify-center"><Icon name="edit-3" size={12} /></span>
+                  탭 이름 수정 (고급)
+                </summary>
+                <div className="mt-4 space-y-3">
+                  {[
+                    { key: 'feed', label: '타임라인', icon: 'layout-grid' },
+                    { key: 'gallery', label: '갤러리', icon: 'image' },
+                    { key: 'checklist', label: '체크리스트', icon: 'check-square' },
+                    { key: 'bucket', label: '버킷리스트', icon: 'star' },
+                    { key: 'calendar', label: '기념일', icon: 'calendar' }
+                  ].map(tab => (
+                    <div key={tab.key} className="flex items-center gap-2">
+                      <Icon name={tab.icon} size={16} className="text-secondary shrink-0" />
+                      <input
+                        type="text"
+                        value={settings.customTabs?.[tab.key] || tab.label}
+                        onChange={(e) => setSettings(prev => ({
+                          ...prev,
+                          customTabs: { ...prev.customTabs, [tab.key]: e.target.value }
+                        }))}
+                        placeholder={tab.label}
+                        className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </details>
+
               <button type="submit" className="w-full py-4 rounded-2xl gradient-theme text-white font-bold shadow-theme btn-bounce" style={{ color: '#ffffff', textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}
                 onClick={async (e) => {
                   e.preventDefault();
