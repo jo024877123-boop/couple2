@@ -1,7 +1,31 @@
 export const THEMES = [
-    { id: 'simple', name: 'Simple', color: '#171717', emoji: '🖤' },
-    { id: 'dark', name: 'Dark', color: '#1e293b', emoji: '🌙' },
-    { id: 'cat', name: 'Cat', color: '#ff6b7e', emoji: '🐱' },
+    { id: 'simple', name: '심플', color: '#171717', emoji: '🖤', unlockLevel: 1 },
+    { id: 'dark', name: '다크', color: '#1e293b', emoji: '🌙', unlockLevel: 1 },
+    { id: 'cat', name: '고양이', color: '#ff6b7e', emoji: '🐱', unlockLevel: 1 },
+    { id: 'pixel', name: '픽셀 게임', color: '#22c55e', emoji: '👾', unlockLevel: 3, description: '레트로 게임 감성' },
+    { id: 'galaxy', name: '갤럭시', color: '#6366f1', emoji: '🪐', unlockLevel: 5, description: '신비로운 우주 여행' },
+];
+
+export const LEVELS = [
+    { level: 1, minExp: 0, next: 100, icon: '🌱', label: '사랑의 씨앗', desc: '작은 씨앗을 심었어요' },
+    { level: 2, minExp: 100, next: 500, icon: '🌿', label: '반짝이는 새싹', desc: '사랑이 싹트고 있어요' },
+    { level: 3, minExp: 500, next: 1500, icon: '🎋', label: '자라나는 줄기', desc: '쑥쑥 자라고 있네요', reward: '👾 픽셀 테마 해금!' },
+    { level: 4, minExp: 1500, next: 3000, icon: '🌳', label: '튼튼한 나무', desc: '비바람에도 끄떡없어요' },
+    { level: 5, minExp: 3000, next: 5000, icon: '✨', label: '풍성한 나무', desc: '그늘이 되어줄게요', reward: '🪐 갤럭시 테마 해금!' },
+    { level: 6, minExp: 5000, next: 7000, icon: '🌸', label: '꽃 피운 나무', desc: '향기로운 추억이 가득' },
+    { level: 7, minExp: 7000, next: Infinity, icon: '🍎', label: '사랑의 결실', desc: '영원한 사랑을 맹세해요', reward: '💖 히든 엔딩 해금' },
+];
+
+export const ACHIEVEMENTS = [
+    { id: 'visit_7', title: '설레는 일주일', description: '7일 동안 매일매일 만나러 왔어요', target: 7, type: 'visit', reward: 50 },
+    { id: 'visit_30', title: '한 달의 기적', description: '30일 개근! 성실한 사랑꾼', target: 30, type: 'visit', reward: 100 },
+    { id: 'visit_100', title: '백일의 약속', description: '100일 동안 변함없이 찾아왔어요', target: 100, type: 'visit', reward: 300 },
+    { id: 'visit_365', title: '일 년의 여정', description: '365일, 사계절을 함께 했어요', target: 365, type: 'visit', reward: 500 },
+
+    { id: 'post_5', title: '추억의 시작', description: '소중한 추억 5개를 기록했어요', target: 5, type: 'post', reward: 50 },
+    { id: 'post_10', title: '기록 꿈나무', description: '벌써 10개의 이야기가 쌓였네요', target: 10, type: 'post', reward: 100 },
+    { id: 'post_50', title: '추억 수집가', description: '50개의 순간들을 영원히 간직해요', target: 50, type: 'post', reward: 300 },
+    { id: 'post_100', title: '우리만의 역사책', description: '100개의 기록, 한 권의 책이 되었어요', target: 100, type: 'post', reward: 500 },
 ];
 
 export const MOOD_OPTIONS = [

@@ -17,6 +17,7 @@ import LoginView from './components/features/LoginView'; // Login View
 import OnboardingView from './components/features/OnboardingView'; // Onboarding
 import AdminDashboard from './components/features/AdminDashboard'; // Admin Dashboard
 import GrowthWidget from './components/features/GrowthWidget'; // Growth Widget
+import AchievementModal from './components/features/AchievementModal'; // Achievement Modal
 import { useDrag } from '@use-gesture/react';
 import { useAuth } from './context/AuthContext'; // Auth Hook
 import {
@@ -153,6 +154,8 @@ const App = () => {
   const [isInstallGuideOpen, setIsInstallGuideOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [isAchievementOpen, setIsAchievementOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const isIos = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
   // Apply Theme Effect
@@ -636,6 +639,9 @@ const App = () => {
       {/* 모바일 헤더 */}
       <header className={`lg:hidden sticky top-0 border-b border-theme-100 z-30 px-4 transition-all duration-300 flex justify-between items-center ${isScrolled ? 'py-2 bg-white/95 backdrop-blur-md shadow-sm' : 'py-4 bg-transparent backdrop-blur-sm'}`}>
         <div className={`flex items-center gap-2 transition-transform duration-300 ${isScrolled ? 'scale-95 origin-left' : 'scale-100'}`}>
+          <button onClick={() => setIsMobileMenuOpen(true)} className="mr-1 text-secondary p-1 active:scale-90 transition-transform">
+            <Icon name="menu" size={24} />
+          </button>
           <Logo size={isScrolled ? 28 : 34} />
           <span className="font-black text-lg bg-gradient-to-r from-theme-500 to-pink-500 bg-clip-text text-transparent truncate max-w-[140px] flex items-center">
             {coupleUsers.length === 2
@@ -727,6 +733,7 @@ const App = () => {
                   setSettings(prev => ({ ...prev, growth: newGrowth }));
                   alert(`🎉 축하합니다! 사랑의 나무가 "${nextLevel.label}"로 성장했습니다!`);
                 }}
+                onClick={() => setIsAchievementOpen(true)}
               />
 
               {posts.length === 0 ? (
@@ -1575,20 +1582,104 @@ const App = () => {
             <div className="text-center mb-6">
               <span className="text-4xl mb-2 block">🎨</span>
               <h3 className="text-2xl font-bold text-primary">테마 선택</h3>
-              <p className="text-secondary text-sm">분위기를 바꿔보세요</p>
+              <p className="text-secondary text-sm">레벨을 올려 새로운 테마를 해금하세요!</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {THEMES.map(theme => (
-                <button key={theme.id} onClick={() => { handleSettingsUpdate({ ...settings, theme: theme.id }); setIsThemePickerOpen(false); }}
-                  className={`p-4 rounded-2xl border-2 transition-all btn-bounce flex items-center gap-3 ${settings.theme === theme.id ? 'border-current shadow-lg scale-105' : 'border-transparent bg-theme-50'
-                    }`} style={{ borderColor: settings.theme === theme.id ? theme.color : undefined }}>
-                  <span className="text-2xl">{theme.emoji}</span>
-                  <span className="font-medium text-sm text-primary">{theme.name}</span>
-                </button>
-              ))}
+              {THEMES.map(theme => {
+                const isLocked = (settings.growth?.level || 1) < (theme.unlockLevel || 1);
+
+                return (
+                  <button
+                    key={theme.id}
+                    onClick={() => {
+                      if (isLocked) {
+                        alert(`🔒 이 테마는 Lv.${theme.unlockLevel}에 해금됩니다!\n(현재 Lv.${settings.growth?.level || 1})`);
+                        return;
+                      }
+                      handleSettingsUpdate({ ...settings, theme: theme.id });
+                      setIsThemePickerOpen(false);
+                    }}
+                    className={`p-4 rounded-2xl border-2 transition-all btn-bounce flex items-center gap-3 relative overflow-hidden ${settings.theme === theme.id ? 'border-current shadow-lg scale-105' : 'border-transparent bg-theme-50'
+                      } ${isLocked ? 'opacity-70 grayscale' : ''}`}
+                    style={{ borderColor: !isLocked && settings.theme === theme.id ? theme.color : undefined }}
+                  >
+                    <span className="text-2xl">{theme.emoji}</span>
+                    <div className="text-left">
+                      <span className="font-medium text-sm text-primary block">{theme.name}</span>
+                      {isLocked && <span className="text-[10px] items-center gap-1 text-secondary flex"><Icon name="lock" size={10} /> Lv.{theme.unlockLevel}</span>}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </BottomSheet>
         )}
+
+      {/* 업적 & 보상 모달 */}
+      {isAchievementOpen && (
+        <AchievementModal onClose={() => setIsAchievementOpen(false)} growth={settings.growth} />
+      )}
+
+      {/* 모바일 햄버거 메뉴 (Drawer) */}
+      {isMobileMenuOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 flex animate-fadeIn bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}>
+          <div className="bg-white w-[280px] h-full shadow-2xl p-6 animate-slideInLeft relative flex flex-col" onClick={e => e.stopPropagation()}>
+
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-2">
+                <Logo size={28} />
+                <span className="font-black text-lg text-primary">Menu</span>
+              </div>
+              <button onClick={() => setIsMobileMenuOpen(false)}><Icon name="x" size={24} className="text-secondary" /></button>
+            </div>
+
+            <div className="space-y-2 flex-1 overflow-y-auto">
+              <div className="text-xs font-bold text-gray-400 mb-2 px-2">바로가기</div>
+              {[
+                { id: 'feed', icon: 'layout-grid', label: '타임라인' },
+                { id: 'gallery', icon: 'image', label: '갤러리' },
+                { id: 'checklist', icon: 'check-square', label: '체크리스트' },
+                { id: 'bucket', icon: 'star', label: '버킷리스트' },
+                { id: 'calendar', icon: 'calendar', label: '기념일' },
+              ].map(item => (
+                <button key={item.id}
+                  onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
+                  className={`w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 font-medium transition-colors ${activeTab === item.id ? 'bg-theme-50 text-theme-600' : 'text-gray-600 hover:bg-gray-50'}`}>
+                  <Icon name={item.icon} size={18} />
+                  {settings.customTabs?.[item.id] || item.label}
+                </button>
+              ))}
+
+              <div className="h-px bg-gray-100 my-4" />
+
+              <div className="text-xs font-bold text-gray-400 mb-2 px-2">성장 & 보상</div>
+              <button onClick={() => { setIsAchievementOpen(true); setIsMobileMenuOpen(false); }} className="w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 font-medium text-gray-600 hover:bg-gray-50">
+                <Icon name="trophy" size={18} className="text-yellow-500" />
+                업적 게시판
+              </button>
+              <button onClick={() => { setIsThemePickerOpen(true); setIsMobileMenuOpen(false); }} className="w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 font-medium text-gray-600 hover:bg-gray-50">
+                <Icon name="palette" size={18} className="text-indigo-500" />
+                테마 변경
+              </button>
+
+              <div className="h-px bg-gray-100 my-4" />
+
+              <button onClick={() => { setIsSettingsOpen(true); setIsMobileMenuOpen(false); }} className="w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 font-medium text-gray-600 hover:bg-gray-50">
+                <Icon name="settings" size={18} className="text-gray-400" />
+                설정
+              </button>
+              <button onClick={() => { setIsProfileOpen(true); setIsMobileMenuOpen(false); }} className="w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 font-medium text-gray-600 hover:bg-gray-50">
+                <Icon name="user" size={18} className="text-gray-400" />
+                내 정보
+              </button>
+            </div>
+
+            <div className="text-center text-[10px] text-gray-300 mt-4">
+              v2.1.0 • Built with ❤️
+            </div>
+          </div>
+        </div>
+      )}
       {/* 관리자 모달 (작고 심플하게) */}
       {isAdminOpen && (
         <Modal onClose={() => setIsAdminOpen(false)} small>

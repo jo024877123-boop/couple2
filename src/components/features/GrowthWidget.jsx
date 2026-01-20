@@ -1,17 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import Icon from '../ui/Icon';
+import { LEVELS } from '../../constants';
 
-const LEVELS = [
-    { level: 1, minExp: 0, next: 100, icon: '🌱', label: '사랑의 씨앗', desc: '작은 씨앗을 심었어요' },
-    { level: 2, minExp: 100, next: 500, icon: '🌿', label: '반짝이는 새싹', desc: '사랑이 싹트고 있어요' },
-    { level: 3, minExp: 500, next: 1500, icon: '🎋', label: '자라나는 줄기', desc: '쑥쑥 자라고 있네요' },
-    { level: 4, minExp: 1500, next: 3000, icon: '🌳', label: '튼튼한 나무', desc: '비바람에도 끄떡없어요' },
-    { level: 5, minExp: 3000, next: 5000, icon: '✨', label: '풍성한 나무', desc: '그늘이 되어줄게요' },
-    { level: 6, minExp: 5000, next: 7000, icon: '🌸', label: '꽃 피운 나무', desc: '향기로운 추억이 가득' },
-    { level: 7, minExp: 7000, next: Infinity, icon: '🍎', label: '사랑의 결실', desc: '영원한 사랑을 맹세해요' },
-];
-
-const GrowthWidget = ({ growth, onLevelUp }) => {
+const GrowthWidget = ({ growth, onLevelUp, onClick }) => {
     const defaultGrowth = { level: 1, exp: 0 };
     const currentGrowth = growth || defaultGrowth;
 
@@ -34,14 +25,18 @@ const GrowthWidget = ({ growth, onLevelUp }) => {
     }, [currentGrowth.exp, levelInfo.next, nextLevel, onLevelUp]);
 
     return (
-        <div className="card-bg rounded-2xl p-5 border border-theme-100 mb-6 bg-gradient-to-br from-white to-green-50 shadow-sm relative overflow-hidden group">
+        <div
+            onClick={onClick}
+            className="card-bg rounded-2xl p-5 border border-theme-100 mb-6 bg-gradient-to-br from-white to-green-50 shadow-sm relative overflow-hidden group cursor-pointer active:scale-98 transition-transform"
+        >
             <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
                 <Icon name="sprout" size={60} className="text-green-500" />
+                <div className="absolute top-4 right-4 bg-red-500 rounded-full w-2 h-2 animate-ping" />
             </div>
 
             <div className="flex items-center gap-4 relative z-10">
                 {/* 나무 아이콘 */}
-                <div className="w-16 h-16 rounded-full bg-white shadow-md flex items-center justify-center text-4xl border-4 border-green-100 shrink-0 transform group-hover:scale-110 transition-transform duration-500 cursor-pointer" title={levelInfo.desc}>
+                <div className="w-16 h-16 rounded-full bg-white shadow-md flex items-center justify-center text-4xl border-4 border-green-100 shrink-0 transform group-hover:scale-110 transition-transform duration-500" title={levelInfo.desc}>
                     {levelInfo.icon}
                 </div>
 
@@ -50,6 +45,7 @@ const GrowthWidget = ({ growth, onLevelUp }) => {
                         <div>
                             <h3 className="font-bold text-primary flex items-center gap-1">
                                 Lv.{levelInfo.level} {levelInfo.label}
+                                <Icon name="chevron-right" size={14} className="text-gray-400" />
                             </h3>
                             <p className="text-xs text-secondary truncate">{levelInfo.desc}</p>
                         </div>
