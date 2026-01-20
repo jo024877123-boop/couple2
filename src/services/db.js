@@ -172,3 +172,32 @@ export const uploadProfilePhoto = async (userId, file) => {
     await updateUserProfile(userId, { photoURL: url });
     return url;
 };
+
+/* --- Custom Anniversaries --- */
+export const subscribeAnniversaries = (coupleId, callback) => {
+    const q = query(
+        collection(db, `couples/${coupleId}/anniversaries`),
+        orderBy('date', 'asc')
+    );
+    return onSnapshot(q, (snapshot) => {
+        const anniversaries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        callback(anniversaries);
+    });
+};
+
+export const addAnniversary = async (coupleId, anniversary) => {
+    await addDoc(collection(db, `couples/${coupleId}/anniversaries`), {
+        ...anniversary,
+        createdAt: serverTimestamp()
+    });
+};
+
+export const updateAnniversary = async (coupleId, anniversaryId, data) => {
+    const docRef = doc(db, `couples/${coupleId}/anniversaries`, anniversaryId);
+    await updateDoc(docRef, { ...data, updatedAt: serverTimestamp() });
+};
+
+export const deleteAnniversary = async (coupleId, anniversaryId) => {
+    const docRef = doc(db, `couples/${coupleId}/anniversaries`, anniversaryId);
+    await deleteDoc(docRef);
+};

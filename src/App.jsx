@@ -24,7 +24,8 @@ import {
   subscribeChecklist, addChecklistItem, updateChecklistItem, deleteChecklistItem,
   subscribeBucketList, addBucketItem, updateBucketItem, deleteBucketItem,
   subscribeChecklistGroups, addChecklistGroup, deleteChecklistGroup,
-  getCoupleUsers, updateUserProfile, uploadProfilePhoto
+  getCoupleUsers, updateUserProfile, uploadProfilePhoto,
+  subscribeAnniversaries, addAnniversary, updateAnniversary, deleteAnniversary
 } from './services/db';
 // Cat Theme Click Interaction
 const useCatEffect = (theme) => {
@@ -210,6 +211,7 @@ const App = () => {
   const [checklist, setChecklist] = useState([]);
   const [bucketList, setBucketList] = useState([]);
   const [calendarNotes, setCalendarNotes] = useState({});
+  const [anniversaries, setAnniversaries] = useState([]);
 
   const [newCheckItem, setNewCheckItem] = useState('');
   const [newGroupName, setNewGroupName] = useState('');
@@ -256,6 +258,7 @@ const App = () => {
     });
     const unsubChecklist = subscribeChecklist(userData.coupleId, setChecklist);
     const unsubBucket = subscribeBucketList(userData.coupleId, setBucketList);
+    const unsubAnniversaries = subscribeAnniversaries(userData.coupleId, setAnniversaries);
 
     return () => {
       unsubUsers();
@@ -263,6 +266,7 @@ const App = () => {
       unsubCheckGroups();
       unsubChecklist();
       unsubBucket();
+      unsubAnniversaries();
     };
   }, [userData?.coupleId]);
 
@@ -1010,6 +1014,11 @@ const App = () => {
                 getMoodInfo={getMoodInfo}
                 calendarNotes={calendarNotes}
                 setCalendarNotes={setCalendarNotes}
+                anniversaries={anniversaries}
+                coupleId={userData?.coupleId}
+                onAddAnniversary={(data) => addAnniversary(userData.coupleId, data)}
+                onUpdateAnniversary={(id, data) => updateAnniversary(userData.coupleId, id, data)}
+                onDeleteAnniversary={(id) => deleteAnniversary(userData.coupleId, id)}
               />
             </div>
           )}

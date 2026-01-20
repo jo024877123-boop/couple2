@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import Icon from '../ui/Icon';
 import { MOOD_OPTIONS, MEMO_COLORS } from '../../constants';
 
-const CalendarView = ({ posts, settings, dDay, onSelectPost, getMoodInfo, calendarNotes, setCalendarNotes }) => {
+const CalendarView = ({
+    posts, settings, dDay, onSelectPost, getMoodInfo, calendarNotes, setCalendarNotes,
+    anniversaries = [], coupleId, onAddAnniversary, onUpdateAnniversary, onDeleteAnniversary
+}) => {
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [showYearMonthPicker, setShowYearMonthPicker] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -15,6 +18,9 @@ const CalendarView = ({ posts, settings, dDay, onSelectPost, getMoodInfo, calend
     const [touchStartX, setTouchStartX] = useState(0);
     const [touchEndX, setTouchEndX] = useState(0);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isAnniversaryFormOpen, setIsAnniversaryFormOpen] = useState(false);
+    const [editingAnniversary, setEditingAnniversary] = useState(null);
+    const [anniversaryForm, setAnniversaryForm] = useState({ title: '', date: '', emoji: '💕' });
     const [moodStamps, setMoodStamps] = useState(() => {
         const saved = localStorage.getItem('coupleApp_moodStamps');
         return saved ? JSON.parse(saved) : {};
@@ -226,15 +232,43 @@ const CalendarView = ({ posts, settings, dDay, onSelectPost, getMoodInfo, calend
         });
     };
 
-    const anniversaryDates = [
-        { label: '시작일', date: settings.anniversaryDate, emoji: '💕' },
-        { label: '100일', date: new Date(new Date(settings.anniversaryDate).getTime() + 100 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10), emoji: '🎂' },
-        { label: '1주년', date: new Date(new Date(settings.anniversaryDate).getTime() + 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10), emoji: '🎉' },
+    // Combine default + custom anniversaries
+    const allAnniversaries = [
+        { id: 'default-start', title: '시작일', date: settings.anniversaryDate, emoji: '💕', isDefault: true },
+        { id: 'default-100', title: '100일', date: new Date(new Date(settings.anniversaryDate).getTime() + 99 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10), emoji: '🎂', isDefault: true },
+        { id: 'default-1yr', title: '1주년', date: new Date(new Date(settings.anniversaryDate).getTime() + 364 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10), emoji: '🎉', isDefault: true },
+        ...anniversaries
     ];
 
     const isAnniversary = (day) => {
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        return anniversaryDates.find(a => a.date === dateStr);
+        return allAnniversaries.find(a => a.date === dateStr);
+    };
+
+    // Calculate D-Day for each anniversary
+    const calcDDay = (dateStr) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const target = new Date(dateStr);
+        target.setHours(0, 0, 0, 0);
+        return Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+    };
+
+    // Save anniversary
+    const handleSaveAnniversary = async () => {
+        if (!anniversaryForm.title.trim() || !anniversaryForm.date) return;
+        try {
+            if (editingAnniversary) {
+                await onUpdateAnniversary(editingAnniversary.id, anniversaryForm);
+            } else {
+                await onAddAnniversary(anniversaryForm);
+            }
+            setIsAnniversaryFormOpen(false);
+            setEditingAnniversary(null);
+            setAnniversaryForm({ title: '', date: '', emoji: '💕' });
+        } catch (err) {
+            alert('저장 실패: ' + err.message);
+        }
     };
 
     const isToday = (day) => {
@@ -252,23 +286,84 @@ const CalendarView = ({ posts, settings, dDay, onSelectPost, getMoodInfo, calend
         <>
             {/* 기념일 카드 */}
             <div className="card-bg rounded-2xl p-5 border border-theme-100 mb-6">
-                <h3 className="font-bold text-lg mb-3 flex items-center gap-2">💕 우리의 기념일</h3>
-                <div className="grid grid-cols-3 gap-3">
-                    {[
-                        { label: '시작일', d: dDay, icon: 'heart' },
-                        { label: '100일', d: 100 - dDay, icon: 'cake' },
-                        { label: '1주년', d: 365 - dDay, icon: 'gift' },
-                    ].map((item, i) => (
-                        <div key={i} className="bg-theme-50 rounded-xl p-3 text-center">
-                            <Icon name={item.icon} size={20} className="mx-auto text-theme-500 mb-1" />
-                            <p className="text-xs text-secondary">{item.label}</p>
-                            <p className="font-bold text-theme-600 text-sm">
-                                {item.d > 0 ? `D-${item.d}` : item.d === 0 ? '오늘!' : `D+${Math.abs(item.d)}`}
-                            </p>
-                        </div>
-                    ))}
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-bold text-lg flex items-center gap-2">💕 우리의 기념일</h3>
+                    <button
+                        onClick={() => { setIsAnniversaryFormOpen(true); setEditingAnniversary(null); setAnniversaryForm({ title: '', date: '', emoji: '💕' }); }}
+                        className="text-sm text-theme-500 font-medium flex items-center gap-1"
+                    >
+                        <Icon name="plus" size={14} /> 추가
+                    </button>
+                </div>
+                <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                    {allAnniversaries.map((item) => {
+                        const d = calcDDay(item.date);
+                        return (
+                            <div key={item.id} className="flex items-center justify-between bg-theme-50 rounded-xl p-3 group">
+                                <div className="flex items-center gap-3">
+                                    <span className="text-xl">{item.emoji}</span>
+                                    <div>
+                                        <p className="text-sm font-bold text-primary">{item.title}</p>
+                                        <p className="text-xs text-secondary">{item.date}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className={`text-sm font-bold ${d > 0 ? 'text-theme-500' : d === 0 ? 'text-green-500' : 'text-secondary'}`}>
+                                        {d > 0 ? `D-${d}` : d === 0 ? '🎉 오늘!' : `D+${Math.abs(d)}`}
+                                    </span>
+                                    {!item.isDefault && (
+                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button onClick={() => { setEditingAnniversary(item); setAnniversaryForm({ title: item.title, date: item.date, emoji: item.emoji }); setIsAnniversaryFormOpen(true); }} className="p-1 hover:bg-white rounded">
+                                                <Icon name="pencil" size={12} className="text-secondary" />
+                                            </button>
+                                            <button onClick={() => { if (confirm('이 기념일을 삭제하시겠습니까?')) onDeleteAnniversary(item.id); }} className="p-1 hover:bg-white rounded">
+                                                <Icon name="trash-2" size={12} className="text-red-400" />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
+
+            {/* 기념일 추가/수정 모달 */}
+            {isAnniversaryFormOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setIsAnniversaryFormOpen(false)}>
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+                    <div className="relative card-bg rounded-2xl shadow-2xl p-5 w-full max-w-sm border border-theme-100" onClick={(e) => e.stopPropagation()}>
+                        <h3 className="font-bold text-lg mb-4">{editingAnniversary ? '기념일 수정' : '새 기념일 추가'}</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-secondary mb-1">이모지</label>
+                                <div className="flex gap-2 flex-wrap">
+                                    {['💕', '❤️', '🎂', '🎉', '🎁', '💍', '🌹', '✨', '🥂', '📅'].map(e => (
+                                        <button key={e} onClick={() => setAnniversaryForm(prev => ({ ...prev, emoji: e }))}
+                                            className={`text-2xl p-1 rounded ${anniversaryForm.emoji === e ? 'bg-theme-100 ring-2 ring-theme-300' : ''}`}>
+                                            {e}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-secondary mb-1">기념일 이름</label>
+                                <input type="text" value={anniversaryForm.title} onChange={(e) => setAnniversaryForm(prev => ({ ...prev, title: e.target.value }))}
+                                    placeholder="예: 첫 키스 기념일" className="w-full px-3 py-2 border border-theme-200 rounded-lg text-sm bg-white" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-secondary mb-1">날짜</label>
+                                <input type="date" value={anniversaryForm.date} onChange={(e) => setAnniversaryForm(prev => ({ ...prev, date: e.target.value }))}
+                                    className="w-full px-3 py-2 border border-theme-200 rounded-lg text-sm bg-white" />
+                            </div>
+                        </div>
+                        <div className="flex gap-2 mt-6">
+                            <button onClick={() => setIsAnniversaryFormOpen(false)} className="flex-1 py-2 border border-theme-200 rounded-lg text-secondary text-sm">취소</button>
+                            <button onClick={handleSaveAnniversary} className="flex-1 py-2 bg-theme-500 text-white rounded-lg text-sm font-medium">저장</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* 달력 */}
             <div
@@ -337,6 +432,7 @@ const CalendarView = ({ posts, settings, dDay, onSelectPost, getMoodInfo, calend
                         const totalItems = memos.length + dayPosts.length;
                         const moodId = moodStamps && moodStamps[dateStr];
                         const moodObj = moodId ? MOOD_OPTIONS.find(m => m.id === moodId) : null;
+                        const anniversaryItem = isAnniversary(day);
 
                         return (
                             <button
@@ -344,6 +440,10 @@ const CalendarView = ({ posts, settings, dDay, onSelectPost, getMoodInfo, calend
                                 onClick={() => handleDayClick(day)}
                                 className="aspect-square flex flex-col items-center justify-center relative cal-cell hover:bg-theme-100"
                             >
+                                {/* Anniversary Star */}
+                                {anniversaryItem && (
+                                    <span className="absolute top-0.5 left-0.5 text-yellow-400 text-[10px]" title={anniversaryItem.title}>⭐</span>
+                                )}
                                 <span className={`text-sm text-primary p-1 rounded-full w-7 h-7 flex items-center justify-center ${today ? 'bg-theme-500 text-white' : ''} ${!today && dayOfWeek === 0 ? 'text-red-400' : ''} ${!today && dayOfWeek === 6 ? 'text-blue-400' : ''}`}>
                                     {day}
                                 </span>
