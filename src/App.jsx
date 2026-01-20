@@ -281,6 +281,8 @@ const App = () => {
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   }, [settings.anniversaryDate]);
 
+  const isConnected = !!(settings.user1 && settings.user2) || coupleUsers.length >= 2;
+
   const handleAddPost = async (e) => {
     e.preventDefault();
     // Allow post if it has content OR media
@@ -1087,14 +1089,14 @@ const App = () => {
                     <span className="w-6 h-6 rounded-full bg-theme-100 text-theme-600 flex items-center justify-center"><Icon name="link" size={12} /></span>
                     커플 연동 상태
                   </span>
-                  {coupleUsers.length >= 2 ? (
+                  {isConnected ? (
                     <span className="text-[10px] bg-green-100 text-green-600 px-2 py-1 rounded-full font-bold">🟢 연결됨</span>
                   ) : (
                     <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-1 rounded-full font-bold">⚪ 연결 대기중</span>
                   )}
                 </h4>
 
-                {coupleUsers.length < 2 ? (
+                {!isConnected ? (
                   <>
                     {/* Show invite code only if not connected */}
                     {/* Show invite code only if not connected */}

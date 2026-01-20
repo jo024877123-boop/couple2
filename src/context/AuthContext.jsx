@@ -177,8 +177,13 @@ export function AuthProvider({ children }) {
         }
 
         // Delete my old couple data
+        // Delete my old couple data (Try-catch to prevent blocking)
         if (userData.coupleId && userData.coupleId !== targetCouple.id) {
-            await deleteCouple(userData.coupleId);
+            try {
+                await deleteCouple(userData.coupleId);
+            } catch (err) {
+                console.warn('Failed to delete old couple data, but proceeding:', err);
+            }
         }
 
         // Connect to target couple
