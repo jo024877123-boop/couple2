@@ -18,13 +18,13 @@ export const getCoupleSettings = async (coupleId) => {
 export const getCoupleUsers = async (coupleId) => {
     const q = query(collection(db, 'users'), where('coupleId', '==', coupleId));
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => doc.data());
+    return querySnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
 };
 
 export const subscribeCoupleUsers = (coupleId, callback) => {
     const q = query(collection(db, 'users'), where('coupleId', '==', coupleId));
     return onSnapshot(q, (snapshot) => {
-        const users = snapshot.docs.map(doc => doc.data());
+        const users = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
         callback(users);
     });
 };

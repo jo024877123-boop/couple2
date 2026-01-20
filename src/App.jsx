@@ -531,6 +531,10 @@ const App = () => {
         )}
 
         <div className={`p-4 ${isSidebarCollapsed ? 'flex-col gap-4 items-center' : 'flex gap-2'}`}>
+          <button onClick={() => setIsProfileOpen(true)} className={`flex items-center justify-center ${isSidebarCollapsed ? 'w-10 h-10 rounded-full' : 'flex-1 px-4 py-3 rounded-xl'} text-secondary hover:text-theme-500 hover:bg-theme-50 transition-all btn-bounce`}>
+            <Icon name="user" size={20} />
+            {!isSidebarCollapsed && <span className="text-sm font-medium ml-2">내 정보</span>}
+          </button>
           <button onClick={handleThemePicker} className={`flex items-center justify-center ${isSidebarCollapsed ? 'w-10 h-10 rounded-full' : 'flex-1 px-4 py-3 rounded-xl'} text-secondary hover:text-theme-500 hover:bg-theme-50 transition-all btn-bounce`}>
             <Icon name="palette" size={20} />
             {!isSidebarCollapsed && <span className="text-sm font-medium ml-2">테마</span>}
