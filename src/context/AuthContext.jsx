@@ -109,6 +109,8 @@ export function AuthProvider({ children }) {
     }
 
     function logout() {
+        setUserData(null);
+        setIsAdmin(false);
         return signOut(auth);
     }
 
