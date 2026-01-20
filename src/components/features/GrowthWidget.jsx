@@ -2,9 +2,11 @@ import React, { useEffect, useState } from 'react';
 import Icon from '../ui/Icon';
 import { LEVELS } from '../../constants';
 
-const GrowthWidget = ({ growth, onLevelUp, onClick }) => {
+const GrowthWidget = ({ growth, onLevelUp, onClick, onCheckIn }) => {
     const defaultGrowth = { level: 1, exp: 0 };
     const currentGrowth = growth || defaultGrowth;
+    const today = new Date().toISOString().slice(0, 10);
+    const isCheckedToday = currentGrowth.lastVisit === today;
 
     // 현재 레벨 정보 찾기
     const levelInfo = LEVELS.find(l => l.level === currentGrowth.level) || LEVELS[0];
@@ -65,14 +67,30 @@ const GrowthWidget = ({ growth, onLevelUp, onClick }) => {
                         </div>
                     </div>
 
-                    {/* 다음 레벨까지 */}
-                    {nextLevel ? (
-                        <p className="text-[10px] text-gray-400 mt-1 text-right">
-                            다음 단계까지 {levelInfo.next - Math.floor(currentGrowth.exp)} XP 남음
-                        </p>
-                    ) : (
-                        <p className="text-[10px] text-theme-500 mt-1 text-right font-bold">최고 레벨 도달! 🎉</p>
-                    )}
+                    <div className="flex justify-between items-center mt-3">
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (!isCheckedToday && onCheckIn) onCheckIn();
+                            }}
+                            disabled={isCheckedToday}
+                            className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all ${isCheckedToday
+                                    ? 'bg-gray-100 text-gray-400 cursor-default'
+                                    : 'gradient-theme text-white shadow-md btn-bounce hover:opacity-90'
+                                }`}
+                        >
+                            <Icon name={isCheckedToday ? "check" : "calendar"} size={12} />
+                            {isCheckedToday ? "오늘 출석 완료" : "출석체크 +10 XP"}
+                        </button>
+
+                        {nextLevel ? (
+                            <p className="text-[10px] text-gray-400">
+                                다음 단계까지 <span className="text-theme-500 font-bold">{levelInfo.next - Math.floor(currentGrowth.exp)}</span> XP
+                            </p>
+                        ) : (
+                            <p className="text-[10px] text-theme-500 font-bold">최고 레벨 도달! 🎉</p>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

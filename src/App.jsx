@@ -183,6 +183,44 @@ const App = () => {
     }
   };
 
+  const handleAttendanceCheck = async () => {
+    if (!userData?.coupleId) return;
+
+    const today = new Date().toISOString().slice(0, 10);
+    let growth = settings.growth ? JSON.parse(JSON.stringify(settings.growth)) : { level: 1, exp: 0, lastVisit: '', totalVisits: 0, achievements: [] };
+
+    if (growth.lastVisit === today) {
+      return;
+    }
+
+    // Daily attendance reward
+    growth.lastVisit = today;
+    growth.totalVisits = (growth.totalVisits || 0) + 1;
+    growth.exp = (growth.exp || 0) + 10;
+
+    // Check Achievements 
+    const achievements = growth.achievements || [];
+    const checkAchieve = (target, id, reward) => {
+      if (growth.totalVisits >= target && !achievements.includes(id)) {
+        achievements.push(id);
+        growth.exp += reward;
+        alert(`🏆 업적 달성! "출석 ${target}일" (+${reward} XP)`);
+      }
+    };
+
+    checkAchieve(7, 'visit_7', 50);
+    checkAchieve(30, 'visit_30', 100);
+    checkAchieve(100, 'visit_100', 300);
+    checkAchieve(365, 'visit_365', 500);
+
+    growth.achievements = achievements;
+
+    // Save
+    await updateCoupleSettings(userData.coupleId, { growth });
+    setSettings(prev => ({ ...prev, growth }));
+    alert("📅 출석체크 완료! (+10 XP) 💕");
+  };
+
   // Gestures
   const bind = useDrag(({ swipe: [swipeX, swipeY], cancel }) => {
     // Pull to Refresh (Down swipe on top)
@@ -254,44 +292,8 @@ const App = () => {
     getCoupleSettings(userData.coupleId).then(async data => {
       if (data) setSettings(prev => ({ ...prev, ...data }));
 
-      // Love Tree Growth & Attendance Logic
-      const today = new Date().toISOString().slice(0, 10);
-      let growth = data?.growth || { level: 1, exp: 0, lastVisit: '', totalVisits: 0, achievements: [] };
-
-      if (growth.lastVisit !== today) {
-        // Daily attendance reward
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().slice(0, 10);
-
-        // If last visit was yesterday, streak logic could go here (omitted for simple accumulation)
-
-        growth.lastVisit = today;
-        growth.totalVisits = (growth.totalVisits || 0) + 1;
-        growth.exp = (growth.exp || 0) + 10; // Daily EXP
-
-        // Check Attendance Achievements
-        const achievements = growth.achievements || [];
-        const checkAchieve = (target, id, reward) => {
-          if (growth.totalVisits >= target && !achievements.includes(id)) {
-            achievements.push(id);
-            growth.exp += reward;
-            alert(`🏆 업적 달성! "출석 ${target}일" (+${reward} XP)`);
-          }
-        };
-
-        checkAchieve(7, 'visit_7', 50);
-        checkAchieve(30, 'visit_30', 100);
-        checkAchieve(100, 'visit_100', 300);
-        checkAchieve(365, 'visit_365', 500);
-
-        growth.achievements = achievements;
-
-        // Save updated growth
-        await updateCoupleSettings(userData.coupleId, { growth });
-        setSettings(prev => ({ ...prev, growth }));
-        console.log('Daily attendance checked:', growth);
-      }
+      // Love Tree Growth: Attendance logic moved to manual check
+      // Data fetch only
     });
     // 2. Subscriptions
     const unsubUsers = subscribeCoupleUsers(userData.coupleId, setCoupleUsers); // Real-time users update
@@ -743,6 +745,7 @@ const App = () => {
                   alert(`🎉 축하합니다! 사랑의 나무가 "${nextLevel.label}"로 성장했습니다!`);
                 }}
                 onClick={() => setIsAchievementOpen(true)}
+                onCheckIn={handleAttendanceCheck}
               />
 
               {posts.length === 0 ? (
