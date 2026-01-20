@@ -525,23 +525,22 @@ const App = () => {
       </aside>
 
       {/* 모바일 헤더 */}
-      <header className={`lg:hidden sticky top-0 border-b border-theme-100 z-30 px-5 transition-all duration-300 flex justify-between items-center ${isScrolled ? 'py-3 bg-white/90 backdrop-blur-md shadow-sm' : 'py-5 bg-transparent backdrop-blur-sm'}`}>
-        <div className={`flex items-center gap-3 transition-transform duration-300 ${isScrolled ? 'scale-90 origin-left' : 'scale-100'}`}>
-          <Logo size={isScrolled ? 32 : 40} />
-          <span className="font-black text-lg bg-gradient-to-r from-theme-500 to-pink-500 bg-clip-text text-transparent">
+      <header className={`lg:hidden sticky top-0 border-b border-theme-100 z-30 px-4 transition-all duration-300 flex justify-between items-center ${isScrolled ? 'py-2 bg-white/95 backdrop-blur-md shadow-sm' : 'py-4 bg-transparent backdrop-blur-sm'}`}>
+        <div className={`flex items-center gap-2 transition-transform duration-300 ${isScrolled ? 'scale-95 origin-left' : 'scale-100'}`}>
+          <Logo size={isScrolled ? 28 : 34} />
+          <span className="font-black text-lg bg-gradient-to-r from-theme-500 to-pink-500 bg-clip-text text-transparent truncate max-w-[140px] flex items-center">
             {coupleUsers.length === 2
-              ? <span className="text-sm text-black flex items-center gap-1">{coupleUsers[0].name} <span className="text-red-500">❤️</span> {coupleUsers[1].name}</span>
+              ? <span className="text-sm text-black flex items-center gap-1"><span className="truncate max-w-[60px]">{coupleUsers[0].name}</span> <span className="text-red-500 shrink-0 text-[10px]">❤️</span> <span className="truncate max-w-[60px]">{coupleUsers[1].name}</span></span>
               : (settings.appTitle || 'Our Story')}
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">D+{dDay}</div>
-          <button onClick={handleInstallClick} className="p-2 text-theme-500 hover:bg-theme-50 rounded-full transition-colors">
-            <Icon name="download" size={20} />
+        <div className="flex items-center gap-1">
+          <div className="bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm mr-1">D+{dDay}</div>
+          <button onClick={handleInstallClick} className="p-1.5 text-theme-500 hover:bg-theme-50 rounded-full transition-colors active:scale-90">
+            <Icon name="download" size={18} />
           </button>
-          <button onClick={handleThemePicker} className="p-2 text-secondary hover:text-theme-500 transition-colors"><Icon name="palette" size={20} /></button>
-          <button onClick={handleSettingsOpen} className="p-2 text-secondary hover:text-theme-500 transition-colors"><Icon name="settings" size={20} /></button>
-          <button onClick={() => { if (confirm('로그아웃 하시겠습니까?')) logout(); }} className="p-2 text-red-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"><Icon name="log-out" size={20} /></button>
+          <button onClick={handleThemePicker} className="p-1.5 text-secondary hover:text-theme-500 transition-colors active:scale-90"><Icon name="palette" size={18} /></button>
+          <button onClick={handleSettingsOpen} className="p-1.5 text-secondary hover:text-theme-500 transition-colors active:scale-90"><Icon name="settings" size={18} /></button>
         </div>
       </header>
 
@@ -1034,21 +1033,35 @@ const App = () => {
 
       {/* 모바일 하단 네비 */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 glass border-t border-theme-100 z-40 pb-safe">
-        <div className="flex justify-between items-center px-6 h-16">
-          <button onClick={() => setActiveTab('feed')} className={`flex flex-col items-center gap-1 p-2 active:scale-90 transition-transform ${activeTab === 'feed' ? 'text-theme-500' : 'text-secondary'}`}>
-            <Icon name="layout-grid" size={24} />
+        <div className="flex justify-around items-end pb-2 h-16 px-1">
+          <button onClick={() => setActiveTab('feed')} className={`flex flex-col items-center gap-0.5 p-2 w-14 transition-colors ${activeTab === 'feed' ? 'text-theme-500' : 'text-secondary'}`}>
+            <Icon name="layout-grid" size={22} fill={activeTab === 'feed'} />
+            <span className="text-[9px] font-bold">타임라인</span>
           </button>
-          <button onClick={handleModalOpen} className="gradient-theme text-white w-14 h-14 rounded-full flex items-center justify-center shadow-theme -mt-8 border-4 border-white active:scale-95 transition-transform">
-            <Icon name="plus" size={26} />
+          <button onClick={() => setActiveTab('gallery')} className={`flex flex-col items-center gap-0.5 p-2 w-14 transition-colors ${activeTab === 'gallery' ? 'text-theme-500' : 'text-secondary'}`}>
+            <Icon name="image" size={22} fill={activeTab === 'gallery'} />
+            <span className="text-[9px] font-bold">갤러리</span>
           </button>
-          <button onClick={() => setActiveTab('gallery')} className={`flex flex-col items-center gap-1 p-2 active:scale-90 transition-transform ${activeTab === 'gallery' ? 'text-theme-500' : 'text-secondary'}`}>
-            <Icon name="image" size={24} />
+
+          <div className="relative -top-5">
+            <button onClick={handleModalOpen} className="gradient-theme text-white w-14 h-14 rounded-full flex items-center justify-center shadow-theme border-4 border-white active:scale-95 transition-transform">
+              <Icon name="plus" size={26} strokeWidth={2.5} />
+            </button>
+          </div>
+
+          <button onClick={() => setActiveTab('checklist')} className={`flex flex-col items-center gap-0.5 p-2 w-14 transition-colors ${activeTab === 'checklist' ? 'text-theme-500' : 'text-secondary'}`}>
+            <Icon name="check-square" size={22} fill={activeTab === 'checklist'} />
+            <span className="text-[9px] font-bold">체크</span>
+          </button>
+          <button onClick={() => setActiveTab('calendar')} className={`flex flex-col items-center gap-0.5 p-2 w-14 transition-colors ${activeTab === 'calendar' ? 'text-theme-500' : 'text-secondary'}`}>
+            <Icon name="calendar-days" size={22} fill={activeTab === 'calendar'} />
+            <span className="text-[9px] font-bold">기념일</span>
           </button>
         </div>
       </nav>
 
       {/* 데스크탑 FAB */}
-      <button onClick={handleModalOpen} className="fixed bottom-6 right-6 lg:bottom-10 lg:right-10 px-6 py-4 gradient-theme shadow-theme hover:shadow-lg transition-all hover:scale-105 active:scale-95 flex items-center gap-2 z-40 btn-bounce btn-primary-text rounded-full">
+      <button onClick={handleModalOpen} className="hidden lg:flex fixed bottom-6 right-6 lg:bottom-10 lg:right-10 px-6 py-4 gradient-theme shadow-theme hover:shadow-lg transition-all hover:scale-105 active:scale-95 items-center gap-2 z-40 btn-bounce btn-primary-text rounded-full">
         <Icon name="plus" size={24} strokeWidth={2.5} />
         <span className="font-bold text-lg">기록 추가하기</span>
       </button>
