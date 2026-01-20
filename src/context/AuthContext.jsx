@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { auth, db } from '../lib/firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'; // Google Auth
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, collection, serverTimestamp } from 'firebase/firestore'; // DB Operations
 import { findCoupleByInviteCode } from '../services/db';
 
@@ -118,6 +118,60 @@ export function AuthProvider({ children }) {
         return res;
     }
 
+    // Email Link (Passwordless) Authentication
+    async function sendEmailLink(email) {
+        const actionCodeSettings = {
+            url: window.location.origin + '/login', // Redirect URL after click
+            handleCodeInApp: true,
+        };
+        await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+        // Save email to localStorage for completing sign-in
+        window.localStorage.setItem('emailForSignIn', email);
+    }
+
+    async function completeEmailLinkSignIn(email, name) {
+        if (!isSignInWithEmailLink(auth, window.location.href)) {
+            throw new Error('유효하지 않은 로그인 링크입니다.');
+        }
+
+        const res = await signInWithEmailLink(auth, email, window.location.href);
+        const user = res.user;
+
+        // Check if user exists
+        const docRef = doc(db, 'users', user.uid);
+        const docSnap = await getDoc(docRef);
+
+        if (!docSnap.exists()) {
+            // New user - create couple and user doc
+            const inviteCode = Math.floor(100000 + Math.random() * 900000).toString();
+            const coupleRef = doc(collection(db, 'couples'));
+            await setDoc(coupleRef, {
+                createdAt: serverTimestamp(),
+                coupleName: '우리',
+                inviteCode,
+                anniversaryDate: new Date().toISOString().split('T')[0],
+                theme: 'simple',
+                appTitle: 'Our Story',
+                appSubtitle: '우리의 이야기'
+            });
+
+            const userDocData = {
+                email,
+                name: name || '사용자',
+                coupleId: coupleRef.id,
+                createdAt: serverTimestamp()
+            };
+            await setDoc(docRef, userDocData);
+            setUserData({ ...userDocData, uid: user.uid });
+        } else {
+            setUserData({ ...docSnap.data(), uid: user.uid });
+        }
+
+        // Clear saved email
+        window.localStorage.removeItem('emailForSignIn');
+        return res;
+    }
+
     function logout() {
         setUserData(null);
         setIsAdmin(false);
@@ -151,11 +205,13 @@ export function AuthProvider({ children }) {
         signup,
         login,
         loginWithGoogle,
+        sendEmailLink,
+        completeEmailLinkSignIn,
         connectPartner,
         logout,
         isAdmin,
         setAdminMode,
-        setUserData // Allow overriding userData for monitoring
+        setUserData
     };
 
     return (
