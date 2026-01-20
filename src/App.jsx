@@ -701,11 +701,19 @@ const App = () => {
 
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
-              <span className="text-3xl">{settings.customIcons ? settings.customIcons[activeTab] : (activeTab === 'feed' ? '📖' : activeTab === 'gallery' ? '🖼️' : '📅')}</span>
+              <span className="text-3xl">{settings.customIcons?.[activeTab] || (
+                activeTab === 'feed' ? '📖' :
+                  activeTab === 'gallery' ? '🖼️' :
+                    activeTab === 'checklist' ? '✅' :
+                      activeTab === 'bucket' ? '⭐' : '📅'
+              )}</span>
               <div>
                 <h2 className="text-2xl lg:text-3xl font-black text-primary">
-                  {settings.customHeaders ? settings.customHeaders[activeTab] : (
-                    activeTab === 'feed' ? '우리의 모든 순간' : activeTab === 'gallery' ? '추억 저장소' : '우리의 기념일'
+                  {settings.customHeaders?.[activeTab] || (
+                    activeTab === 'feed' ? '우리의 모든 순간' :
+                      activeTab === 'gallery' ? '추억 저장소' :
+                        activeTab === 'checklist' ? '체크리스트' :
+                          activeTab === 'bucket' ? '버킷리스트' : '우리의 기념일'
                   )}
                 </h2>
                 <p className="text-secondary text-sm font-medium mt-1">{posts.length}개의 소중한 기억</p>
@@ -1558,6 +1566,33 @@ const App = () => {
                 </div>
               </div>
 
+              <div className="border-t border-gray-100 my-4 pt-4">
+                <h3 className="font-bold text-sm text-gray-800 mb-4 flex items-center gap-2">
+                  <span className="p-1 bg-pink-100 text-pink-500 rounded-lg"><Icon name="type" size={14} /></span>
+                  페이지 메인 제목
+                </h3>
+                <div className="space-y-3">
+                  {[
+                    { key: 'feed', label: '타임라인' },
+                    { key: 'gallery', label: '갤러리' },
+                    { key: 'checklist', label: '체크리스트' },
+                    { key: 'bucket', label: '버킷리스트' },
+                    { key: 'calendar', label: '기념일' }
+                  ].map(tab => (
+                    <input
+                      key={`header-${tab.key}`}
+                      type="text"
+                      className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white text-sm focus:border-theme-500 focus:ring-2 focus:ring-theme-100 transition-all outline-none"
+                      value={settings.customHeaders?.[tab.key] || ''}
+                      placeholder={`${tab.label} 페이지 제목`}
+                      onChange={e => setSettings(prev => ({
+                        ...prev,
+                        customHeaders: { ...prev.customHeaders, [tab.key]: e.target.value }
+                      }))}
+                    />
+                  ))}
+                </div>
+              </div>
               <button type="submit" className="w-full py-4 rounded-2xl gradient-theme text-white font-bold shadow-theme btn-bounce" style={{ color: '#ffffff', textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}
                 onClick={async (e) => {
                   e.preventDefault();
@@ -1724,16 +1759,22 @@ const App = () => {
             <div className="border-t border-theme-100 pt-6">
               <h4 className="font-bold text-sm mb-3 text-secondary">페이지 메인 제목</h4>
               <div className="space-y-3">
-                {['feed', 'gallery', 'calendar'].map(key => (
-                  <div key={`header-${key}`} className="flex gap-2">
+                {[
+                  { key: 'feed', label: 'Timeline 제목' },
+                  { key: 'gallery', label: 'Gallery 제목' },
+                  { key: 'checklist', label: 'Checklist 제목' },
+                  { key: 'bucket', label: 'Bucket List 제목' },
+                  { key: 'calendar', label: 'Anniversary 제목' }
+                ].map(item => (
+                  <div key={`header-${item.key}`} className="flex gap-2">
                     <div className="w-16">
-                      <InputField label="이모지" value={settings.customIcons ? settings.customIcons[key] : ''}
-                        onChange={v => handleSettingsUpdate({ ...settings, customIcons: { ...settings.customIcons, [key]: v } })} />
+                      <InputField label="이모지" value={settings.customIcons ? settings.customIcons[item.key] : ''}
+                        onChange={v => handleSettingsUpdate({ ...settings, customIcons: { ...settings.customIcons, [item.key]: v } })} />
                     </div>
                     <div className="flex-1">
-                      <InputField label={key === 'feed' ? 'Timeline 제목' : key === 'gallery' ? 'Gallery 제목' : 'Anniversary 제목'}
-                        value={settings.customHeaders ? settings.customHeaders[key] : ''}
-                        onChange={v => handleSettingsUpdate({ ...settings, customHeaders: { ...settings.customHeaders, [key]: v } })} />
+                      <InputField label={item.label}
+                        value={settings.customHeaders ? settings.customHeaders[item.key] : ''}
+                        onChange={v => handleSettingsUpdate({ ...settings, customHeaders: { ...settings.customHeaders, [item.key]: v } })} />
                     </div>
                   </div>
                 ))}
