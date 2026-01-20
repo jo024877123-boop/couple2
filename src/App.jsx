@@ -16,6 +16,7 @@ import InstallGuide from './components/ui/InstallGuide';
 import LoginView from './components/features/LoginView'; // Login View
 import OnboardingView from './components/features/OnboardingView'; // Onboarding
 import AdminDashboard from './components/features/AdminDashboard'; // Admin Dashboard
+import GrowthWidget from './components/features/GrowthWidget'; // Growth Widget
 import { useDrag } from '@use-gesture/react';
 import { useAuth } from './context/AuthContext'; // Auth Hook
 import {
@@ -246,9 +247,48 @@ const App = () => {
   useEffect(() => {
     if (!userData?.coupleId) return;
 
-    // 1. Settings Fetch
-    getCoupleSettings(userData.coupleId).then(data => {
+    // 1. Settings Fetch & Attendance Check
+    getCoupleSettings(userData.coupleId).then(async data => {
       if (data) setSettings(prev => ({ ...prev, ...data }));
+
+      // Love Tree Growth & Attendance Logic
+      const today = new Date().toISOString().slice(0, 10);
+      let growth = data?.growth || { level: 1, exp: 0, lastVisit: '', totalVisits: 0, achievements: [] };
+
+      if (growth.lastVisit !== today) {
+        // Daily attendance reward
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().slice(0, 10);
+
+        // If last visit was yesterday, streak logic could go here (omitted for simple accumulation)
+
+        growth.lastVisit = today;
+        growth.totalVisits = (growth.totalVisits || 0) + 1;
+        growth.exp = (growth.exp || 0) + 10; // Daily EXP
+
+        // Check Attendance Achievements
+        const achievements = growth.achievements || [];
+        const checkAchieve = (target, id, reward) => {
+          if (growth.totalVisits >= target && !achievements.includes(id)) {
+            achievements.push(id);
+            growth.exp += reward;
+            alert(`🏆 업적 달성! "출석 ${target}일" (+${reward} XP)`);
+          }
+        };
+
+        checkAchieve(7, 'visit_7', 50);
+        checkAchieve(30, 'visit_30', 100);
+        checkAchieve(100, 'visit_100', 300);
+        checkAchieve(365, 'visit_365', 1000);
+
+        growth.achievements = achievements;
+
+        // Save updated growth
+        await updateCoupleSettings(userData.coupleId, { growth });
+        setSettings(prev => ({ ...prev, growth }));
+        console.log('Daily attendance checked:', growth);
+      }
     });
     // 2. Subscriptions
     const unsubUsers = subscribeCoupleUsers(userData.coupleId, setCoupleUsers); // Real-time users update
@@ -408,7 +448,34 @@ const App = () => {
       };
 
       await addPost(userData.coupleId, post);
-      alert("저장되었습니다! 💕");
+
+      // Growth Logic: Post Creation Reward
+      const growth = settings.growth || { level: 1, exp: 0, lastVisit: '', totalVisits: 0, achievements: [] };
+      let newExp = (growth.exp || 0) + 5; // +5 XP per post
+      let newAchievements = [...(growth.achievements || [])];
+      let expBonus = 0;
+
+      const currentPostCount = (posts?.length || 0) + 1;
+      const checkPostAchieve = (target, id, reward) => {
+        if (currentPostCount >= target && !newAchievements.includes(id)) {
+          newAchievements.push(id);
+          expBonus += reward;
+          alert(`✍️ 업적 달성! "추억 기록 ${target}개" (+${reward} XP)`);
+        }
+      };
+
+      checkPostAchieve(5, 'post_5', 50);
+      checkPostAchieve(10, 'post_10', 100);
+      checkPostAchieve(50, 'post_50', 500);
+      checkPostAchieve(100, 'post_100', 1000);
+
+      if (expBonus > 0 || newExp !== growth.exp) {
+        const newGrowth = { ...growth, exp: newExp + expBonus, achievements: newAchievements };
+        await updateCoupleSettings(userData.coupleId, { growth: newGrowth });
+        setSettings(prev => ({ ...prev, growth: newGrowth }));
+      }
+
+      alert("✨ 추억이 저장되었습니다! (+5 XP) 💕");
       resetForm();
       setIsModalOpen(false);
     } catch (err) {
@@ -651,6 +718,17 @@ const App = () => {
           {/* 피드 */}
           {activeTab === 'feed' && (
             <div className="space-y-6">
+              {/* 사랑의 나무 위젯 */}
+              <GrowthWidget
+                growth={settings.growth}
+                onLevelUp={async (nextLevel) => {
+                  const newGrowth = { ...settings.growth, level: nextLevel.level };
+                  await updateCoupleSettings(userData.coupleId, { growth: newGrowth });
+                  setSettings(prev => ({ ...prev, growth: newGrowth }));
+                  alert(`🎉 축하합니다! 사랑의 나무가 "${nextLevel.label}"로 성장했습니다!`);
+                }}
+              />
+
               {posts.length === 0 ? (
                 <EmptyState onAdd={() => setIsModalOpen(true)} />
               ) : (
