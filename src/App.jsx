@@ -89,7 +89,7 @@ const Logo = ({ size = 40, className = "" }) => (
 );
 
 const App = () => {
-  const { currentUser, userData, logout, connectWithCode, regenerateInviteCode, disconnectCouple, isAdmin, setUserData } = useAuth();
+  const { currentUser, userData, logout, connectWithCode, generateInviteCode, disconnectCouple, isAdmin, setUserData } = useAuth();
   const [adminViewTarget, setAdminViewTarget] = useState(null); // Couple ID to monitor
 
   // Settings State (Default values)
