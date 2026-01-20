@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+// Force redeploy trigger
 import Icon from './components/ui/Icon';
 import { THEMES, MOOD_OPTIONS, SAMPLE_POSTS, MEMO_COLORS } from './constants';
 import './styles/index.css';
