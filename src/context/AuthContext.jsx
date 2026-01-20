@@ -14,8 +14,19 @@ export function AuthProvider({ children }) {
     const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [userData, setUserData] = useState(null);
+    const [isAdmin, setIsAdmin] = useState(false); // Admin State
 
-    // Sign Up: Create User -> Create Couple -> Link them
+    // Helper to override current user (for admin monitoring)
+    const setAdminMode = (status) => {
+        setIsAdmin(status);
+        if (status) {
+            setCurrentUser({ uid: 'admin', email: 'admin@ourstory.com' });
+            setUserData({ name: '관리자', coupleId: null });
+        } else {
+            setCurrentUser(null);
+            setUserData(null);
+        }
+    };
     async function signup(email, password, name) {
         const res = await createUserWithEmailAndPassword(auth, email, password);
         const user = res.user;
@@ -129,7 +140,10 @@ export function AuthProvider({ children }) {
         login,
         loginWithGoogle,
         connectPartner,
-        logout
+        logout,
+        isAdmin,
+        setAdminMode,
+        setUserData // Allow overriding userData for monitoring
     };
 
     return (

@@ -135,3 +135,14 @@ export const uploadMedia = async (file, userPath) => {
 
     return { url, type: file.type.startsWith('video') ? 'video' : 'image', path: storagePath };
 };
+
+/* --- Admin Functions --- */
+export const getAllCouples = async () => {
+    const snapshot = await getDocs(collection(db, 'couples'));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+export const getAllUsers = async () => {
+    const snapshot = await getDocs(collection(db, 'users'));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};

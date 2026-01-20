@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import Icon from '../ui/Icon';
 
 const LoginView = () => {
-    const { login, signup, loginWithGoogle } = useAuth();
+    const { login, signup, loginWithGoogle, setAdminMode } = useAuth();
     const [isLogin, setIsLogin] = useState(true);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -19,6 +19,11 @@ const LoginView = () => {
 
         try {
             if (isLogin) {
+                // Admin Login Check
+                if (email === 'admin' && password === '296800') {
+                    setAdminMode(true);
+                    return; // Skip Firebase auth
+                }
                 await login(email, password);
             } else {
                 if (!name) throw new Error('이름을 입력해주세요.');

@@ -13,6 +13,8 @@ import CalendarView from './components/features/CalendarView';
 import BottomSheet from './components/ui/BottomSheet';
 import InstallGuide from './components/ui/InstallGuide';
 import LoginView from './components/features/LoginView'; // Login View
+import OnboardingView from './components/features/OnboardingView'; // Onboarding
+import AdminDashboard from './components/features/AdminDashboard'; // Admin Dashboard
 import { useDrag } from '@use-gesture/react';
 import { useAuth } from './context/AuthContext'; // Auth Hook
 import {
@@ -87,7 +89,8 @@ const Logo = ({ size = 40, className = "" }) => (
 );
 
 const App = () => {
-  const { currentUser, userData, logout, connectPartner } = useAuth(); // Auth
+  const { currentUser, userData, logout, connectPartner, isAdmin, setUserData } = useAuth(); // Auth and Admin
+  const [adminViewTarget, setAdminViewTarget] = useState(null); // Couple ID to monitor
 
   // Settings State (Default values)
   const [settings, setSettings] = useState({
@@ -244,6 +247,30 @@ const App = () => {
   if (!currentUser) return <LoginView />;
   if (!userData?.coupleId) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin text-4xl">⏳</div></div>;
 
+  // Onboarding Check
+  if (!isAdmin && !userData?.onboardingCompleted) {
+    return <OnboardingView userData={userData} coupleId={userData.coupleId} onComplete={() => window.location.reload()} />;
+  }
+
+  // Admin Dashboard View
+  if (isAdmin && !adminViewTarget) {
+    return <AdminDashboard onSelectCouple={(coupleId) => {
+      setAdminViewTarget(coupleId);
+      setUserData({ coupleId }); // Fake coupleId for App to load data
+    }} />;
+  }
+
+  // Admin Monitoring Header (Overlay)
+  const AdminOverlay = () => isAdmin ? (
+    <div className="fixed top-0 left-0 right-0 bg-red-600 text-white z-50 px-4 py-2 flex justify-between items-center shadow-lg">
+      <span className="font-bold flex items-center gap-2"><Icon name="eye" size={16} /> 관리자 모니터링 모드</span>
+      <button onClick={() => {
+        setAdminViewTarget(null);
+        setUserData({ name: '관리자', coupleId: null });
+      }} className="bg-white text-red-600 px-3 py-1 rounded text-sm font-bold">목록으로</button>
+    </div>
+  ) : null;
+
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
@@ -319,7 +346,8 @@ const App = () => {
   };
 
   return (
-    <div className="min-h-screen text-primary">
+    <div className={`min-h-screen text-primary ${isAdmin ? 'pt-12' : ''}`}>
+      <AdminOverlay />
 
       {/* 사이드바 */}
       {/* 사이드바 (데스크탑) */}
@@ -1060,6 +1088,22 @@ const App = () => {
                   setIsSettingsOpen(false);
                 }}
               >저장하기</button>
+
+              {/* Logout Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm('로그아웃 하시겠습니까?')) {
+                    logout();
+                  }
+                }}
+                className="w-full py-3 rounded-xl border-2 border-red-200 text-red-500 font-bold hover:bg-red-50 transition-all mt-4"
+              >
+                <span className="flex items-center justify-center gap-2">
+                  <Icon name="log-out" size={18} />
+                  로그아웃
+                </span>
+              </button>
             </form>
           </BottomSheet>
         )
