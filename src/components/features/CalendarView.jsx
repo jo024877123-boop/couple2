@@ -256,9 +256,21 @@ const CalendarView = ({
 
     // Save anniversary
     const handleSaveAnniversary = async () => {
-        if (!anniversaryForm.title.trim() || !anniversaryForm.date) return;
+        if (!anniversaryForm.title.trim() || !anniversaryForm.date) {
+            alert('기념일 이름과 날짜를 입력해주세요.');
+            return;
+        }
+
+        const action = editingAnniversary ? '수정' : '저장';
+        if (!confirm(`정말 ${action}하시겠습니까?`)) return;
+
         try {
             if (editingAnniversary) {
+                // 기본 기념일(시작일) 수정 시 settings 업데이트 필요
+                if (editingAnniversary.isDefault && editingAnniversary.id === 'default-start') {
+                    // 시작일 변경 알림
+                    alert('시작일을 변경하면 100일, 1주년도 자동으로 변경됩니다.');
+                }
                 await onUpdateAnniversary(editingAnniversary.id, anniversaryForm);
             } else {
                 await onAddAnniversary(anniversaryForm);
@@ -266,6 +278,7 @@ const CalendarView = ({
             setIsAnniversaryFormOpen(false);
             setEditingAnniversary(null);
             setAnniversaryForm({ title: '', date: '', emoji: '💕' });
+            alert(`기념일이 ${action}되었습니다!`);
         } catch (err) {
             alert('저장 실패: ' + err.message);
         }
@@ -311,16 +324,26 @@ const CalendarView = ({
                                     <span className={`text-sm font-bold ${d > 0 ? 'text-theme-500' : d === 0 ? 'text-green-500' : 'text-secondary'}`}>
                                         {d > 0 ? `D-${d}` : d === 0 ? '🎉 오늘!' : `D+${Math.abs(d)}`}
                                     </span>
-                                    {!item.isDefault && (
-                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button onClick={() => { setEditingAnniversary(item); setAnniversaryForm({ title: item.title, date: item.date, emoji: item.emoji }); setIsAnniversaryFormOpen(true); }} className="p-1 hover:bg-white rounded">
-                                                <Icon name="pencil" size={12} className="text-secondary" />
-                                            </button>
-                                            <button onClick={() => { if (confirm('이 기념일을 삭제하시겠습니까?')) onDeleteAnniversary(item.id); }} className="p-1 hover:bg-white rounded">
-                                                <Icon name="trash-2" size={12} className="text-red-400" />
-                                            </button>
-                                        </div>
-                                    )}
+                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 sm:opacity-100 transition-opacity">
+                                        <button onClick={() => {
+                                            setEditingAnniversary(item);
+                                            setAnniversaryForm({ title: item.title, date: item.date, emoji: item.emoji, isDefault: item.isDefault });
+                                            setIsAnniversaryFormOpen(true);
+                                        }} className="p-1.5 hover:bg-white rounded-lg">
+                                            <Icon name="pencil" size={14} className="text-secondary" />
+                                        </button>
+                                        <button onClick={() => {
+                                            if (confirm('정말 이 기념일을 삭제하시겠습니까?')) {
+                                                if (item.isDefault) {
+                                                    alert('기본 기념일은 삭제할 수 없습니다. 날짜를 수정해주세요.');
+                                                } else {
+                                                    onDeleteAnniversary(item.id);
+                                                }
+                                            }
+                                        }} className="p-1.5 hover:bg-white rounded-lg">
+                                            <Icon name="trash-2" size={14} className="text-red-400" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -352,9 +375,20 @@ const CalendarView = ({
                                     placeholder="예: 첫 키스 기념일" className="w-full px-3 py-2 border border-theme-200 rounded-lg text-sm bg-white" />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-secondary mb-1">날짜</label>
-                                <input type="date" value={anniversaryForm.date} onChange={(e) => setAnniversaryForm(prev => ({ ...prev, date: e.target.value }))}
-                                    className="w-full px-3 py-2 border border-theme-200 rounded-lg text-sm bg-white" />
+                                <label className="block text-sm font-medium text-secondary mb-1">날짜 선택</label>
+                                <input
+                                    type="date"
+                                    value={anniversaryForm.date}
+                                    onChange={(e) => setAnniversaryForm(prev => ({ ...prev, date: e.target.value }))}
+                                    onClick={(e) => e.target.showPicker && e.target.showPicker()}
+                                    className="w-full px-4 py-3 border-2 border-theme-200 rounded-xl text-base bg-white focus:border-theme-400 focus:outline-none cursor-pointer"
+                                    style={{ colorScheme: 'light' }}
+                                />
+                                {anniversaryForm.date && (
+                                    <p className="text-xs text-theme-500 mt-1">
+                                        선택된 날짜: {new Date(anniversaryForm.date).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                    </p>
+                                )}
                             </div>
                         </div>
                         <div className="flex gap-2 mt-6">
