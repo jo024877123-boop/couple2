@@ -1532,35 +1532,17 @@ const App = () => {
                     { key: 'calendar', label: '기념일', icon: 'calendar' }
                   ].map(tab => (
                     <div key={tab.key} className="flex items-center gap-3">
-                      <div className="w-14 shrink-0">
-                        <label className="text-[10px] font-bold text-gray-400 mb-1 block">이모지</label>
-                        <div className="bg-gray-50 rounded-xl h-11 flex items-center justify-center relative border border-gray-200 focus-within:border-theme-500 focus-within:ring-2 focus-within:ring-theme-100 transition-all">
-                          <input
-                            type="text"
-                            className="w-full h-full text-center bg-transparent text-xl p-0 border-none focus:ring-0 z-10"
-                            value={settings.customIcons?.[tab.key] || ''}
-                            placeholder=""
-                            onChange={e => setSettings(prev => ({
-                              ...prev,
-                              customIcons: { ...prev.customIcons, [tab.key]: e.target.value }
-                            }))}
-                          />
-                          {!settings.customIcons?.[tab.key] && <Icon name={tab.icon} size={18} className="text-gray-300 absolute pointer-events-none" />}
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <label className="text-[10px] font-bold text-gray-400 mb-1 block">{tab.label} 제목</label>
-                        <input
-                          type="text"
-                          className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white text-sm focus:border-theme-500 focus:ring-2 focus:ring-theme-100 transition-all outline-none"
-                          value={settings.customTabs?.[tab.key] || ''}
-                          placeholder={tab.label}
-                          onChange={e => setSettings(prev => ({
-                            ...prev,
-                            customTabs: { ...prev.customTabs, [tab.key]: e.target.value }
-                          }))}
-                        />
-                      </div>
+                      <Icon name={tab.icon} size={18} className="text-gray-400 shrink-0" />
+                      <input
+                        type="text"
+                        className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white text-sm focus:border-theme-500 focus:ring-2 focus:ring-theme-100 transition-all outline-none"
+                        value={settings.customTabs?.[tab.key] || ''}
+                        placeholder={tab.label}
+                        onChange={e => setSettings(prev => ({
+                          ...prev,
+                          customTabs: { ...prev.customTabs, [tab.key]: e.target.value }
+                        }))}
+                      />
                     </div>
                   ))}
                 </div>
@@ -1579,17 +1561,34 @@ const App = () => {
                     { key: 'bucket', label: '버킷리스트' },
                     { key: 'calendar', label: '기념일' }
                   ].map(tab => (
-                    <input
-                      key={`header-${tab.key}`}
-                      type="text"
-                      className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white text-sm focus:border-theme-500 focus:ring-2 focus:ring-theme-100 transition-all outline-none"
-                      value={settings.customHeaders?.[tab.key] || ''}
-                      placeholder={`${tab.label} 페이지 제목`}
-                      onChange={e => setSettings(prev => ({
-                        ...prev,
-                        customHeaders: { ...prev.customHeaders, [tab.key]: e.target.value }
-                      }))}
-                    />
+                    <div key={`header-${tab.key}`} className="flex gap-2 items-end">
+                      <div className="w-14 shrink-0">
+                        <label className="text-[10px] font-bold text-gray-400 mb-1 block">이모지</label>
+                        <input
+                          type="text"
+                          className="w-full h-11 text-center text-xl rounded-xl border border-gray-200 bg-gray-50 focus:border-theme-500 focus:ring-2 focus:ring-theme-100 transition-all outline-none"
+                          value={settings.customIcons?.[tab.key] || ''}
+                          placeholder="✨"
+                          onChange={e => setSettings(prev => ({
+                            ...prev,
+                            customIcons: { ...prev.customIcons, [tab.key]: e.target.value }
+                          }))}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-[10px] font-bold text-gray-400 mb-1 block">{tab.label} 제목</label>
+                        <input
+                          type="text"
+                          className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white text-sm focus:border-theme-500 focus:ring-2 focus:ring-theme-100 transition-all outline-none"
+                          value={settings.customHeaders?.[tab.key] || ''}
+                          placeholder={`${tab.label} 페이지 제목`}
+                          onChange={e => setSettings(prev => ({
+                            ...prev,
+                            customHeaders: { ...prev.customHeaders, [tab.key]: e.target.value }
+                          }))}
+                        />
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
