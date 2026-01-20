@@ -3,6 +3,7 @@ export const THEMES = [
     { id: 'dark', name: '다크', color: '#1e293b', emoji: '🌙', unlockLevel: 1 },
     { id: 'cat', name: '고양이', color: '#ff6b7e', emoji: '🐱', unlockLevel: 1 },
     { id: 'pixel', name: '픽셀 게임', color: '#22c55e', emoji: '👾', unlockLevel: 3, description: '레트로 게임 감성' },
+    { id: 'crayon', name: '크레파스', color: '#facc15', emoji: '🖍️', unlockLevel: 4, description: '몽글몽글 손그림 감성' },
     { id: 'galaxy', name: '갤럭시', color: '#6366f1', emoji: '🪐', unlockLevel: 5, description: '신비로운 우주 여행' },
 ];
 
@@ -10,7 +11,7 @@ export const LEVELS = [
     { level: 1, minExp: 0, next: 100, icon: '🌱', label: '사랑의 씨앗', desc: '작은 씨앗을 심었어요' },
     { level: 2, minExp: 100, next: 500, icon: '🌿', label: '반짝이는 새싹', desc: '사랑이 싹트고 있어요' },
     { level: 3, minExp: 500, next: 1500, icon: '🎋', label: '자라나는 줄기', desc: '쑥쑥 자라고 있네요', reward: '👾 픽셀 테마 해금!' },
-    { level: 4, minExp: 1500, next: 3000, icon: '🌳', label: '튼튼한 나무', desc: '비바람에도 끄떡없어요' },
+    { level: 4, minExp: 1500, next: 3000, icon: '🌳', label: '튼튼한 나무', desc: '비바람에도 끄떡없어요', reward: '🖍️ 크레파스 테마 해금!' },
     { level: 5, minExp: 3000, next: 5000, icon: '✨', label: '풍성한 나무', desc: '그늘이 되어줄게요', reward: '🪐 갤럭시 테마 해금!' },
     { level: 6, minExp: 5000, next: 7000, icon: '🌸', label: '꽃 피운 나무', desc: '향기로운 추억이 가득' },
     { level: 7, minExp: 7000, next: Infinity, icon: '🍎', label: '사랑의 결실', desc: '영원한 사랑을 맹세해요', reward: '💖 히든 엔딩 해금' },

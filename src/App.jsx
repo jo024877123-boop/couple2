@@ -643,10 +643,21 @@ const App = () => {
             <Icon name="menu" size={24} />
           </button>
           <Logo size={isScrolled ? 28 : 34} />
-          <span className="font-black text-lg bg-gradient-to-r from-theme-500 to-pink-500 bg-clip-text text-transparent truncate max-w-[140px] flex items-center">
-            {coupleUsers.length === 2
-              ? <span className="text-sm text-black flex items-center gap-1"><span className="truncate max-w-[60px]">{coupleUsers[0].name}</span> <span className="text-red-500 shrink-0 text-[10px]">❤️</span> <span className="truncate max-w-[60px]">{coupleUsers[1].name}</span></span>
-              : (settings.appTitle || 'Our Story')}
+          <span
+            onClick={() => {
+              const current = settings.appTitle || '';
+              const newTitle = prompt("메인 제목을 입력하세요 (비워두면 커플 이름 표시)", current);
+              if (newTitle !== null) {
+                handleSettingsUpdate({ ...settings, appTitle: newTitle });
+              }
+            }}
+            className="font-black text-lg bg-gradient-to-r from-theme-500 to-pink-500 bg-clip-text text-transparent truncate max-w-[140px] flex items-center cursor-pointer active:opacity-70"
+          >
+            {settings.appTitle || (
+              coupleUsers.length === 2
+                ? <span className="text-sm text-black flex items-center gap-1"><span className="truncate max-w-[60px]">{coupleUsers[0].name}</span> <span className="text-red-500 shrink-0 text-[10px]">❤️</span> <span className="truncate max-w-[60px]">{coupleUsers[1].name}</span></span>
+                : 'Our Story'
+            )}
           </span>
         </div>
         <div className="flex items-center gap-1">
@@ -1586,7 +1597,7 @@ const App = () => {
             </div>
             <div className="grid grid-cols-2 gap-3">
               {THEMES.map(theme => {
-                const isLocked = (settings.growth?.level || 1) < (theme.unlockLevel || 1);
+                const isLocked = !isAdmin && ((settings.growth?.level || 1) < (theme.unlockLevel || 1));
 
                 return (
                   <button

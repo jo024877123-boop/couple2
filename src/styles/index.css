@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@300;400;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -141,6 +142,44 @@
   background-size: 550px 550px, 350px 350px, 250px 250px;
   background-position: 0 0, 40px 60px, 130px 270px;
   background-color: #1e1b4b;
+}
+
+[data-theme="crayon"] {
+  --primary-50: #fefce8;
+  --primary-100: #fef9c3;
+  --primary-200: #fef08a;
+  --primary-300: #fde047;
+  --primary-400: #facc15;
+  --primary-500: #eab308;
+  --primary-600: #ca8a04;
+  --primary-700: #a16207;
+  --bg-gradient-from: #fffbeb;
+  --bg-gradient-to: #fef3c7;
+  --card-bg: rgba(255, 255, 255, 0.95);
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: #fde047;
+  --text-primary: #422006;
+  --text-secondary: #713f12;
+  --btn-text: #ffffff;
+  --btn-bg-from: #fbbf24;
+  --btn-bg-to: #f59e0b;
+  font-family: 'Gaegu', cursive;
+}
+
+[data-theme="crayon"] .btn-bounce,
+[data-theme="crayon"] .card-bg,
+[data-theme="crayon"] button:not(.rounded-full),
+[data-theme="crayon"] input,
+[data-theme="crayon"] .rounded-xl,
+[data-theme="crayon"] .rounded-2xl {
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px !important;
+  border: 2px solid #fde047 !important;
+  box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="crayon"] .rounded-full {
+  border-radius: 50% !important;
+  border: 2px solid #fde047 !important;
 }
 
 html[data-theme="cat"],
