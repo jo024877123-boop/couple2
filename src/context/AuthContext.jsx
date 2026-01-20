@@ -384,6 +384,7 @@ export function AuthProvider({ children }) {
             if (user) {
                 if (!isAdmin) {
                     setStatusMessage('커플 데이터 연결 중...');
+                    console.log('📡 [AuthContext] Subscribing to doc(db, "users", "' + user.uid + '")');
                     // Real-time subscription
                     unsubscribeUserDoc = onSnapshot(doc(db, 'users', user.uid), (docSnap) => {
                         clearTimeout(timeoutId);
@@ -403,12 +404,14 @@ export function AuthProvider({ children }) {
                         } else {
                             setStatusMessage('사용자 정보를 찾을 수 없습니다.');
                             console.warn('⚠️ [AuthContext] Document does not exist for uid:', user.uid);
+                            alert('⚠️ Firestore에 사용자 문서가 없습니다!\nUID: ' + user.uid + '\n\nFirebase Console에서 이 UID로 문서를 찾아보세요.');
                         }
                         setLoading(false);
                     }, (error) => {
                         clearTimeout(timeoutId);
                         loadingRef.current = false;
-                        console.error("❌ [AuthContext] Snapshot error:", error);
+                        console.error("❌ [AuthContext] onSnapshot error:", error);
+                        alert('❌ [AuthContext] Firestore 접근 오류:\n' + error.code + '\n' + error.message);
                         setStatusMessage('접근 권한 혹은 데이터 오류');
                         setLoading(false);
                     });
