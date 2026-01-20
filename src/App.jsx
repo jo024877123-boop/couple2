@@ -303,6 +303,18 @@ const App = () => {
   ) : null;
 
 
+
+  const handleSettingsUpdate = async (newSettings) => {
+    setSettings(newSettings);
+    if (userData?.coupleId) {
+      try {
+        await updateCoupleSettings(userData.coupleId, newSettings);
+      } catch (error) {
+        console.error("Failed to update settings:", error);
+      }
+    }
+  };
+
   const handleAddPost = async (e) => {
     e.preventDefault();
 
@@ -1277,7 +1289,7 @@ const App = () => {
             </div>
             <div className="grid grid-cols-2 gap-3">
               {THEMES.map(theme => (
-                <button key={theme.id} onClick={() => { setSettings({ ...settings, theme: theme.id }); setIsThemePickerOpen(false); }}
+                <button key={theme.id} onClick={() => { handleSettingsUpdate({ ...settings, theme: theme.id }); setIsThemePickerOpen(false); }}
                   className={`p-4 rounded-2xl border-2 transition-all btn-bounce flex items-center gap-3 ${settings.theme === theme.id ? 'border-current shadow-lg scale-105' : 'border-transparent bg-theme-50'
                     }`} style={{ borderColor: settings.theme === theme.id ? theme.color : undefined }}>
                   <span className="text-2xl">{theme.emoji}</span>
@@ -1297,7 +1309,7 @@ const App = () => {
               <div className="space-y-3">
                 {['feed', 'gallery', 'checklist', 'bucket', 'calendar'].map(key => (
                   <InputField key={`tab-${key}`} label={key.toUpperCase()} value={settings.customTabs ? settings.customTabs[key] : ''}
-                    onChange={v => setSettings({ ...settings, customTabs: { ...settings.customTabs, [key]: v } })} />
+                    onChange={v => handleSettingsUpdate({ ...settings, customTabs: { ...settings.customTabs, [key]: v } })} />
                 ))}
               </div>
             </div>
@@ -1308,12 +1320,12 @@ const App = () => {
                   <div key={`header-${key}`} className="flex gap-2">
                     <div className="w-16">
                       <InputField label="이모지" value={settings.customIcons ? settings.customIcons[key] : ''}
-                        onChange={v => setSettings({ ...settings, customIcons: { ...settings.customIcons, [key]: v } })} />
+                        onChange={v => handleSettingsUpdate({ ...settings, customIcons: { ...settings.customIcons, [key]: v } })} />
                     </div>
                     <div className="flex-1">
                       <InputField label={key === 'feed' ? 'Timeline 제목' : key === 'gallery' ? 'Gallery 제목' : 'Anniversary 제목'}
                         value={settings.customHeaders ? settings.customHeaders[key] : ''}
-                        onChange={v => setSettings({ ...settings, customHeaders: { ...settings.customHeaders, [key]: v } })} />
+                        onChange={v => handleSettingsUpdate({ ...settings, customHeaders: { ...settings.customHeaders, [key]: v } })} />
                     </div>
                   </div>
                 ))}
