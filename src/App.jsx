@@ -314,10 +314,15 @@ const App = () => {
     setSettings(newSettings);
     if (userData?.coupleId) {
       try {
+        console.log('Saving settings...', newSettings);
         await updateCoupleSettings(userData.coupleId, newSettings);
+        console.log('Settings saved!');
       } catch (error) {
         console.error("Failed to update settings:", error);
+        alert(`저장 실패: ${error.message} (${error.code})`);
       }
+    } else {
+      alert("오류: 커플 ID를 찾을 수 없습니다.");
     }
   };
 
