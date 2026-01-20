@@ -1083,9 +1083,16 @@ const App = () => {
 
               {/* Couple Connection Section */}
               <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
-                <h4 className="font-bold text-sm text-gray-800 mb-4 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-theme-100 text-theme-600 flex items-center justify-center"><Icon name="link" size={12} /></span>
-                  커플 연동 상태
+                <h4 className="font-bold text-sm text-gray-800 mb-4 flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-theme-100 text-theme-600 flex items-center justify-center"><Icon name="link" size={12} /></span>
+                    커플 연동 상태
+                  </span>
+                  {coupleUsers.length >= 2 ? (
+                    <span className="text-[10px] bg-green-100 text-green-600 px-2 py-1 rounded-full font-bold">🟢 연결됨</span>
+                  ) : (
+                    <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-1 rounded-full font-bold">⚪ 연결 대기중</span>
+                  )}
                 </h4>
 
                 {coupleUsers.length < 2 ? (
