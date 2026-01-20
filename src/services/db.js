@@ -158,3 +158,17 @@ export const getAllUsers = async () => {
     const snapshot = await getDocs(collection(db, 'users'));
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
+
+/* --- User Profile --- */
+export const updateUserProfile = async (userId, data) => {
+    const docRef = doc(db, 'users', userId);
+    await updateDoc(docRef, { ...data, updatedAt: serverTimestamp() });
+};
+
+export const uploadProfilePhoto = async (userId, file) => {
+    const storageRef = ref(storage, `profiles/${userId}`);
+    await uploadBytes(storageRef, file);
+    const url = await getDownloadURL(storageRef);
+    await updateUserProfile(userId, { photoURL: url });
+    return url;
+};

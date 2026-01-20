@@ -1,10 +1,15 @@
 import React from 'react';
 import Icon from './Icon';
 
-const PostCard = ({ post, settings, getMoodInfo, onClick, isEditMode, onEdit, onDelete }) => {
+const PostCard = ({ post, settings, getMoodInfo, onClick, isEditMode, onEdit, onDelete, coupleUsers = [] }) => {
     const moodInfo = getMoodInfo(post.mood);
     const thumbnail = post.media[post.thumbnailIndex] || post.media[0];
     const dateStr = new Date(post.date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+
+    // Find author info from coupleUsers
+    const authorInfo = coupleUsers.find(u => u.uid === post.author);
+    const authorName = authorInfo?.name || (post.author === 'me' ? settings.myName : settings.partnerName);
+    const authorPhoto = authorInfo?.photoURL;
 
     return (
         <div className={`card-bg rounded-[2rem] shadow-sm border border-theme-100 overflow-hidden ${!isEditMode && 'card-hover cursor-pointer'}`}
@@ -12,9 +17,14 @@ const PostCard = ({ post, settings, getMoodInfo, onClick, isEditMode, onEdit, on
             <div className="p-5 sm:p-6">
                 <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-theme-100 flex items-center justify-center text-xl">{moodInfo.emoji}</div>
+                        {/* Author Photo or Mood Emoji */}
+                        {authorPhoto ? (
+                            <img src={authorPhoto} alt={authorName} className="w-10 h-10 rounded-xl object-cover border border-theme-100" />
+                        ) : (
+                            <div className="w-10 h-10 rounded-xl bg-theme-100 flex items-center justify-center text-xl">{moodInfo.emoji}</div>
+                        )}
                         <div>
-                            <p className="text-sm font-bold text-primary">{post.author === 'me' ? settings.myName : settings.partnerName}</p>
+                            <p className="text-sm font-bold text-primary">{authorName}</p>
                             <p className="text-xs text-secondary">{dateStr} · {post.location}</p>
                         </div>
                     </div>

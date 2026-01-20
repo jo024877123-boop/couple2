@@ -24,7 +24,7 @@ import {
   subscribeChecklist, addChecklistItem, updateChecklistItem, deleteChecklistItem,
   subscribeBucketList, addBucketItem, updateBucketItem, deleteBucketItem,
   subscribeChecklistGroups, addChecklistGroup, deleteChecklistGroup,
-  getCoupleUsers
+  getCoupleUsers, updateUserProfile, uploadProfilePhoto
 } from './services/db';
 // Cat Theme Click Interaction
 const useCatEffect = (theme) => {
@@ -149,6 +149,8 @@ const App = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isInstallGuideOpen, setIsInstallGuideOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
   const isIos = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
   // Apply Theme Effect
@@ -271,10 +273,14 @@ const App = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // dDay calculation - must be before conditional returns
+  // dDay calculation - must be before conditional returns (Day 1 = anniversary date itself)
   const dDay = useMemo(() => {
-    const diff = Math.abs(new Date() - new Date(settings.anniversaryDate));
-    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const anniversary = new Date(settings.anniversaryDate);
+    anniversary.setHours(0, 0, 0, 0);
+    const diff = Math.abs(today - anniversary);
+    return Math.floor(diff / (1000 * 60 * 60 * 24)) + 1; // +1 to count from day 1
   }, [settings.anniversaryDate]);
 
   const isConnected = !!(settings.user1 && settings.user2) || coupleUsers.length >= 2;
@@ -564,9 +570,7 @@ const App = () => {
         </div>
         <div className="flex items-center gap-1">
           <div className="bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm mr-1">D+{dDay}</div>
-          <button onClick={handleInstallClick} className="p-1.5 text-theme-500 hover:bg-theme-50 rounded-full transition-colors active:scale-90">
-            <Icon name="download" size={18} />
-          </button>
+          <button onClick={() => setIsProfileOpen(true)} className="p-1.5 text-secondary hover:text-theme-500 transition-colors active:scale-90"><Icon name="user" size={18} /></button>
           <button onClick={handleThemePicker} className="p-1.5 text-secondary hover:text-theme-500 transition-colors active:scale-90"><Icon name="palette" size={18} /></button>
           <button onClick={handleSettingsOpen} className="p-1.5 text-secondary hover:text-theme-500 transition-colors active:scale-90"><Icon name="settings" size={18} /></button>
         </div>
@@ -650,6 +654,7 @@ const App = () => {
                       isEditMode={isEditMode}
                       onEdit={() => setEditingPost({ ...post })}
                       onDelete={() => setDeleteConfirm(post.id)}
+                      coupleUsers={coupleUsers}
                     />
                   </div>
                 ))
@@ -1148,6 +1153,122 @@ const App = () => {
           />
         )
       }
+
+      {/* 내 정보 (프로필) 모달 */}
+      {isProfileOpen && (
+        <BottomSheet isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)}>
+          <div className="text-center mb-6">
+            <span className="text-4xl mb-2 block">👤</span>
+            <h3 className="text-2xl font-bold text-primary">내 정보</h3>
+            <p className="text-secondary text-sm">닉네임과 프로필 사진을 수정하세요</p>
+          </div>
+
+          {/* 현재 사용자 정보 */}
+          {(() => {
+            const myInfo = coupleUsers.find(u => u.uid === currentUser?.uid);
+            return (
+              <div className="space-y-6">
+                {/* 프로필 사진 */}
+                <div className="flex flex-col items-center gap-3">
+                  <div className="relative group">
+                    {myInfo?.photoURL ? (
+                      <img src={myInfo.photoURL} alt="프로필" className="w-24 h-24 rounded-full object-cover border-4 border-theme-200 shadow-lg" />
+                    ) : (
+                      <div className="w-24 h-24 rounded-full gradient-theme flex items-center justify-center text-white text-3xl font-bold shadow-lg">
+                        {(myInfo?.name || '나').charAt(0)}
+                      </div>
+                    )}
+                    <label className="absolute bottom-0 right-0 w-8 h-8 bg-theme-500 text-white rounded-full flex items-center justify-center cursor-pointer shadow-md hover:bg-theme-600 transition-all">
+                      <Icon name="camera" size={16} />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          if (e.target.files?.[0] && currentUser) {
+                            setProfileLoading(true);
+                            try {
+                              await uploadProfilePhoto(currentUser.uid, e.target.files[0]);
+                              alert('프로필 사진이 변경되었습니다!');
+                            } catch (err) {
+                              alert('업로드 실패: ' + err.message);
+                            }
+                            setProfileLoading(false);
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+                  <p className="text-xs text-secondary">사진을 클릭하여 변경</p>
+                </div>
+
+                {/* 닉네임 수정 */}
+                <div>
+                  <label className="block text-sm font-bold text-primary mb-2">닉네임</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      id="nicknameInput"
+                      defaultValue={myInfo?.name || ''}
+                      placeholder="닉네임을 입력하세요"
+                      className="flex-1 bg-theme-50 border-2 border-transparent focus:border-theme-300 rounded-xl px-4 py-3 text-primary outline-none"
+                    />
+                    <button
+                      onClick={async () => {
+                        const newName = document.getElementById('nicknameInput').value.trim();
+                        if (newName && currentUser) {
+                          setProfileLoading(true);
+                          try {
+                            await updateUserProfile(currentUser.uid, { name: newName });
+                            alert('닉네임이 변경되었습니다!');
+                          } catch (err) {
+                            alert('변경 실패: ' + err.message);
+                          }
+                          setProfileLoading(false);
+                        }
+                      }}
+                      disabled={profileLoading}
+                      className="px-4 py-3 gradient-theme text-white font-bold rounded-xl shadow-theme btn-bounce disabled:opacity-50"
+                    >
+                      {profileLoading ? '...' : '저장'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* 이메일 (읽기 전용) */}
+                <div>
+                  <label className="block text-sm font-bold text-secondary mb-2">이메일</label>
+                  <p className="text-sm text-gray-500 bg-gray-50 px-4 py-3 rounded-xl">{currentUser?.email}</p>
+                </div>
+
+                {/* 커플 정보 */}
+                {coupleUsers.length >= 2 && (
+                  <div className="bg-pink-50 p-4 rounded-2xl border border-pink-100">
+                    <p className="text-sm font-bold text-pink-600 mb-2">💕 연결된 파트너</p>
+                    <div className="flex items-center gap-3">
+                      {(() => {
+                        const partner = coupleUsers.find(u => u.uid !== currentUser?.uid);
+                        return partner ? (
+                          <>
+                            {partner.photoURL ? (
+                              <img src={partner.photoURL} alt="파트너" className="w-10 h-10 rounded-full object-cover border-2 border-pink-200" />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-pink-200 flex items-center justify-center text-pink-600 font-bold">
+                                {(partner.name || '?').charAt(0)}
+                              </div>
+                            )}
+                            <span className="font-bold text-primary">{partner.name || partner.email}</span>
+                          </>
+                        ) : null;
+                      })()}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </BottomSheet>
+      )}
 
       {/* 설정 */}
       {
