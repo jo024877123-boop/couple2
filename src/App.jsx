@@ -557,7 +557,7 @@ const App = () => {
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center px-0' : 'px-4 gap-4'} py-3.5 rounded-2xl font-semibold transition-all btn-bounce ${activeTab === tab.id ? 'bg-theme-100 text-theme-600 shadow-sm' : 'text-secondary hover:bg-theme-50'
                 }`} title={isSidebarCollapsed ? tab.label : ''}>
-              <Icon name={tab.icon} size={22} className={activeTab === tab.id ? 'text-theme-500' : ''} />
+              {settings.customIcons?.[tab.id] ? <span className="text-xl">{settings.customIcons[tab.id]}</span> : <Icon name={tab.icon} size={22} className={activeTab === tab.id ? 'text-theme-500' : ''} />}
               {!isSidebarCollapsed && <span>{settings.customTabs ? settings.customTabs[tab.id] : tab.label}</span>}
               {!isSidebarCollapsed && activeTab === tab.id && <div className="ml-auto w-1.5 h-1.5 bg-theme-500 rounded-full" />}
             </button>
@@ -668,12 +668,16 @@ const App = () => {
         <div className={`hidden lg:flex sticky top-6 z-20 mx-6 mb-6 px-6 ${isScrolled ? 'py-2.5 scale-[0.98] bg-white/60 shadow-md backdrop-blur-2xl' : 'py-4 bg-white/40 shadow-sm backdrop-blur-md'} rounded-2xl border border-white/20 items-center justify-between transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:shadow-lg hover:scale-[0.99]`}>
           <div className="flex items-center gap-3">
             <div className={`p-2 bg-theme-50/50 rounded-xl text-theme-500 transition-all duration-300 ${isScrolled ? 'scale-90' : ''}`}>
-              <Icon name={
-                activeTab === 'feed' ? 'layout-grid' :
-                  activeTab === 'gallery' ? 'image' :
-                    activeTab === 'checklist' ? 'check-square' :
-                      activeTab === 'bucket' ? 'star' : 'calendar-days'
-              } size={isScrolled ? 18 : 20} />
+              {settings.customIcons?.[activeTab] ? (
+                <span className={isScrolled ? "text-lg" : "text-xl"}>{settings.customIcons[activeTab]}</span>
+              ) : (
+                <Icon name={
+                  activeTab === 'feed' ? 'layout-grid' :
+                    activeTab === 'gallery' ? 'image' :
+                      activeTab === 'checklist' ? 'check-square' :
+                        activeTab === 'bucket' ? 'star' : 'calendar-days'
+                } size={isScrolled ? 18 : 20} />
+              )}
             </div>
             <span className={`font-bold text-primary tracking-tight transition-all duration-300 ${isScrolled ? 'text-base' : 'text-lg'}`}>{
               settings.customTabs ? settings.customTabs[activeTab] : (activeTab === 'feed' ? 'Timeline' :
@@ -1495,14 +1499,7 @@ const App = () => {
               </div>
 
               <InputField label="우리 이름" value={settings.coupleName} onChange={v => setSettings({ ...settings, coupleName: v })} placeholder="예: 우진 & 유나" />
-              <div className="grid grid-cols-4 gap-3">
-                <div className="col-span-3">
-                  <InputField label="메인 제목" value={settings.appTitle || ''} onChange={v => setSettings({ ...settings, appTitle: v })} placeholder="커플 이름 (비우면 자동)" />
-                </div>
-                <div className="col-span-1">
-                  <InputField label="이모지" value={settings.appEmoji || '💖'} onChange={v => setSettings({ ...settings, appEmoji: v })} />
-                </div>
-              </div>
+              <InputField label="메인 제목" value={settings.appTitle || ''} onChange={v => setSettings({ ...settings, appTitle: v })} placeholder="커플 이름 (비우면 자동)" />
               <InputField label="서브 타이틀" value={settings.appSubtitle || ''} onChange={v => setSettings({ ...settings, appSubtitle: v })} placeholder="우리의 이야기" />
               <div className="hidden">
                 <InputField label="나의 이름" value={settings.myName} onChange={v => setSettings({ ...settings, myName: v })} />
@@ -1510,13 +1507,12 @@ const App = () => {
               </div>
               <InputField label="시작한 날" type="date" value={settings.anniversaryDate} onChange={v => setSettings({ ...settings, anniversaryDate: v })} icon="heart" />
 
-              {/* 탭 이름 커스터마이징 */}
-              <details className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
-                <summary className="font-bold text-sm text-gray-800 cursor-pointer flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-theme-100 text-theme-600 flex items-center justify-center"><Icon name="edit-3" size={12} /></span>
-                  탭 이름 수정 (고급)
-                </summary>
-                <div className="mt-4 space-y-3">
+              <div className="border-t border-gray-100 my-4 pt-4">
+                <h3 className="font-bold text-sm text-gray-800 mb-4 flex items-center gap-2">
+                  <span className="p-1 bg-indigo-100 text-indigo-500 rounded-lg"><Icon name="edit-3" size={14} /></span>
+                  게시판 설정
+                </h3>
+                <div className="space-y-4">
                   {[
                     { key: 'feed', label: '타임라인', icon: 'layout-grid' },
                     { key: 'gallery', label: '갤러리', icon: 'image' },
@@ -1524,22 +1520,40 @@ const App = () => {
                     { key: 'bucket', label: '버킷리스트', icon: 'star' },
                     { key: 'calendar', label: '기념일', icon: 'calendar' }
                   ].map(tab => (
-                    <div key={tab.key} className="flex items-center gap-2">
-                      <Icon name={tab.icon} size={16} className="text-secondary shrink-0" />
-                      <input
-                        type="text"
-                        value={settings.customTabs?.[tab.key] || tab.label}
-                        onChange={(e) => setSettings(prev => ({
-                          ...prev,
-                          customTabs: { ...prev.customTabs, [tab.key]: e.target.value }
-                        }))}
-                        placeholder={tab.label}
-                        className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
-                      />
+                    <div key={tab.key} className="flex items-center gap-3">
+                      <div className="w-14 shrink-0">
+                        <label className="text-[10px] font-bold text-gray-400 mb-1 block">이모지</label>
+                        <div className="bg-gray-50 rounded-xl h-11 flex items-center justify-center relative border border-gray-200 focus-within:border-theme-500 focus-within:ring-2 focus-within:ring-theme-100 transition-all">
+                          <input
+                            type="text"
+                            className="w-full h-full text-center bg-transparent text-xl p-0 border-none focus:ring-0 z-10"
+                            value={settings.customIcons?.[tab.key] || ''}
+                            placeholder=""
+                            onChange={e => setSettings(prev => ({
+                              ...prev,
+                              customIcons: { ...prev.customIcons, [tab.key]: e.target.value }
+                            }))}
+                          />
+                          {!settings.customIcons?.[tab.key] && <Icon name={tab.icon} size={18} className="text-gray-300 absolute pointer-events-none" />}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-[10px] font-bold text-gray-400 mb-1 block">{tab.label} 제목</label>
+                        <input
+                          type="text"
+                          className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white text-sm focus:border-theme-500 focus:ring-2 focus:ring-theme-100 transition-all outline-none"
+                          value={settings.customTabs?.[tab.key] || ''}
+                          placeholder={tab.label}
+                          onChange={e => setSettings(prev => ({
+                            ...prev,
+                            customTabs: { ...prev.customTabs, [tab.key]: e.target.value }
+                          }))}
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>
-              </details>
+              </div>
 
               <button type="submit" className="w-full py-4 rounded-2xl gradient-theme text-white font-bold shadow-theme btn-bounce" style={{ color: '#ffffff', textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}
                 onClick={async (e) => {
@@ -1655,7 +1669,7 @@ const App = () => {
                 <button key={item.id}
                   onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
                   className={`w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 font-medium transition-colors ${activeTab === item.id ? 'bg-theme-50 text-theme-600' : 'text-gray-600 hover:bg-gray-50'}`}>
-                  <Icon name={item.icon} size={18} />
+                  {settings.customIcons?.[item.id] ? <span className="text-lg w-[18px] flex justify-center">{settings.customIcons[item.id]}</span> : <Icon name={item.icon} size={18} />}
                   {settings.customTabs?.[item.id] || item.label}
                 </button>
               ))}
