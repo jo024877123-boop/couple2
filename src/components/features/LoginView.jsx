@@ -3,8 +3,8 @@ import { useAuth } from '../../context/AuthContext';
 import Icon from '../ui/Icon';
 
 const LoginView = () => {
-    const { login, signup, loginWithGoogle, setAdminMode } = useAuth();
-    const [mode, setMode] = useState('login'); // 'login', 'signup', 'verify-sent'
+    const { login, signup, loginWithGoogle, setAdminMode, resetPassword } = useAuth();
+    const [mode, setMode] = useState('login'); // 'login', 'signup', 'verify-sent', 'forgot-password'
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -91,6 +91,31 @@ const LoginView = () => {
         }
     };
 
+    // ========== RESET PASSWORD ==========
+    const handleResetPassword = async (e) => {
+        e.preventDefault();
+        setError('');
+        setSuccess('');
+        setLoading(true);
+
+        try {
+            await resetPassword(email);
+            setSuccess('비밀번호 재설정 메일을 보냈습니다! 메일함을 확인해주세요.');
+            setTimeout(() => {
+                setMode('login');
+                setSuccess('');
+            }, 5000);
+        } catch (err) {
+            console.error(err);
+            let msg = err.message;
+            if (msg.includes('auth/user-not-found')) msg = '등록되지 않은 이메일입니다.';
+            else if (msg.includes('auth/invalid-email')) msg = '유효하지 않은 이메일 형식입니다.';
+            setError(msg);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
             <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden p-8 animate-scaleIn">
@@ -132,7 +157,12 @@ const LoginView = () => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">비밀번호</label>
+                            <div className="flex justify-between mb-2 ml-1">
+                                <label className="block text-sm font-bold text-gray-700">비밀번호</label>
+                                <button type="button" onClick={() => setMode('forgot-password')} className="text-xs text-purple-500 font-bold hover:underline">
+                                    비밀번호를 잊으셨나요?
+                                </button>
+                            </div>
                             <input
                                 type="password"
                                 value={password}
@@ -254,6 +284,47 @@ const LoginView = () => {
                     </form>
                 )}
 
+                {/* ========== FORGOT PASSWORD MODE ========== */}
+                {mode === 'forgot-password' && (
+                    <form onSubmit={handleResetPassword} className="space-y-4 animate-fadeIn">
+                        <div className="text-center mb-4">
+                            <span className="text-3xl mb-2 block">🔑</span>
+                            <h3 className="text-xl font-bold text-gray-900">비밀번호 재설정</h3>
+                            <p className="text-gray-500 text-sm">가입하신 이메일을 입력하시면<br />재설정 링크를 보내드립니다.</p>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">이메일</label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={e => setEmail(e.target.value)}
+                                className="w-full bg-gray-50 border-2 border-transparent focus:border-purple-300 rounded-xl px-4 py-3 outline-none transition-all"
+                                placeholder="example@email.com"
+                                required
+                            />
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full py-4 rounded-xl bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold text-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
+                        >
+                            {loading ? '전송 중...' : '재설정 링크 보내기'}
+                        </button>
+
+                        <div className="text-center pt-2">
+                            <button
+                                type="button"
+                                onClick={() => { resetForm(); setMode('login'); }}
+                                className="text-gray-400 text-sm hover:text-gray-600"
+                            >
+                                ← 로그인으로 돌아가기
+                            </button>
+                        </div>
+                    </form>
+                )}
+
                 {/* ========== VERIFY SENT MODE ========== */}
                 {mode === 'verify-sent' && (
                     <div className="text-center space-y-6 animate-fadeIn">
@@ -268,7 +339,7 @@ const LoginView = () => {
                             </p>
                         </div>
                         <div className="bg-purple-50 p-4 rounded-xl text-sm text-purple-700">
-                            💡 이메일의 링크를 클릭한 후, 다시 돌아와서 로그인해주세요.
+                            💡 이메일의 링크를 클릭하여 인증을 완료한 후,<br />다시 로그인해주세요.
                         </div>
                         <button
                             onClick={() => { resetForm(); setMode('login'); }}

@@ -7,7 +7,8 @@ import {
     onAuthStateChanged,
     GoogleAuthProvider,
     signInWithPopup,
-    sendEmailVerification
+    sendEmailVerification,
+    sendPasswordResetEmail
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, serverTimestamp, getDocs, query, where } from 'firebase/firestore';
 
@@ -146,12 +147,22 @@ export function AuthProvider({ children }) {
     async function connectWithCode(inviteCode) {
         if (!currentUser || !userData) throw new Error('로그인이 필요합니다.');
 
+        // Trim and validate
+        const code = inviteCode.trim();
+        if (!code || code.length !== 6) {
+            throw new Error('초대 코드는 6자리 숫자입니다.');
+        }
+
+        console.log('Looking for invite code:', code);
+
         // Find couple with this invite code
-        const q = query(collection(db, 'couples'), where('inviteCode', '==', inviteCode));
+        const q = query(collection(db, 'couples'), where('inviteCode', '==', code));
         const snapshot = await getDocs(q);
 
+        console.log('Found couples:', snapshot.size);
+
         if (snapshot.empty) {
-            throw new Error('유효하지 않은 초대 코드입니다.');
+            throw new Error('유효하지 않은 초대 코드입니다. 코드를 다시 확인해주세요.');
         }
 
         const targetCouple = snapshot.docs[0];
@@ -253,6 +264,11 @@ export function AuthProvider({ children }) {
         return signOut(auth);
     }
 
+    // ========== PASSWORD RESET ==========
+    function resetPassword(email) {
+        return sendPasswordResetEmail(auth, email);
+    }
+
     // ========== ADMIN ==========
     function setAdminMode(status) {
         setIsAdmin(status);
@@ -292,6 +308,7 @@ export function AuthProvider({ children }) {
         signup,
         login,
         loginWithGoogle,
+        resetPassword, // Export function
         connectWithCode,
         disconnectCouple,
         logout,
