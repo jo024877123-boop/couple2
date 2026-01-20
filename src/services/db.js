@@ -14,6 +14,23 @@ export const getCoupleSettings = async (coupleId) => {
     return null;
 };
 
+// Fetch all users belonging to a couple (for "Name ❤️ Name")
+export const getCoupleUsers = async (coupleId) => {
+    const q = query(collection(db, 'users'), where('coupleId', '==', coupleId));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => doc.data());
+};
+
+// Find couple by invite code
+export const findCoupleByInviteCode = async (inviteCode) => {
+    const q = query(collection(db, 'couples'), where('inviteCode', '==', inviteCode));
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+        return { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() };
+    }
+    return null;
+};
+
 export const updateCoupleSettings = async (coupleId, settings) => {
     const docRef = doc(db, 'couples', coupleId);
     const { id, ...data } = settings; // Remove ID if exists

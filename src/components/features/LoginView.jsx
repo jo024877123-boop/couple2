@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import Icon from '../ui/Icon';
 
 const LoginView = () => {
-    const { login, signup } = useAuth();
+    const { login, signup, loginWithGoogle } = useAuth();
     const [isLogin, setIsLogin] = useState(true);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -26,7 +26,14 @@ const LoginView = () => {
             }
         } catch (err) {
             console.error(err);
-            setError(isLogin ? '로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.' : '회원가입 중 오류가 발생했습니다. (비밀번호 6자리 이상)');
+            let msg = err.message;
+            if (msg.includes('auth/email-already-in-use')) msg = '이미 사용 중인 이메일입니다.';
+            else if (msg.includes('auth/weak-password')) msg = '비밀번호는 6자리 이상이어야 합니다.';
+            else if (msg.includes('auth/invalid-email')) msg = '유효하지 않은 이메일 형식입니다.';
+            else if (msg.includes('auth/user-not-found') || msg.includes('auth/wrong-password') || msg.includes('auth/invalid-credential')) msg = '이메일 또는 비밀번호가 일치하지 않습니다.';
+            else if (msg.includes('api-key')) msg = 'Firebase API 키 설정 오류입니다 (.env 확인 필요)';
+
+            setError(msg);
         } finally {
             setLoading(false);
         }
@@ -43,7 +50,7 @@ const LoginView = () => {
                     <p className="text-gray-500">우리만의 특별한 공간</p>
                 </div>
 
-                {error && <div className="mb-6 p-4 bg-red-50 text-red-500 text-sm rounded-xl text-center font-medium animate-shake">{error}</div>}
+                {error && <div className="mb-6 p-4 bg-red-50 text-red-500 text-sm rounded-xl text-center font-medium animate-shake break-keep">{error}</div>}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {!isLogin && (
@@ -74,6 +81,19 @@ const LoginView = () => {
                         {loading ? '처리 중...' : (isLogin ? '로그인하기' : '새로 시작하기')}
                     </button>
                 </form>
+
+                <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200"></div></div>
+                    <div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-gray-400">또는</span></div>
+                </div>
+
+                <button onClick={async () => {
+                    try { setLoading(true); await loginWithGoogle(); }
+                    catch (e) { console.error(e); setError('Google 로그인 실패: ' + e.message); setLoading(false); }
+                }} className="w-full py-4 rounded-xl border-2 border-gray-100 flex items-center justify-center gap-3 hover:bg-gray-50 transition-all text-gray-700 font-bold mb-4 btn-bounce">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" className="w-5 h-5" />
+                    Google로 계속하기
+                </button>
 
                 <div className="mt-8 text-center">
                     <button onClick={() => setIsLogin(!isLogin)} className="text-gray-400 hover:text-theme-500 font-medium text-sm transition-colors">

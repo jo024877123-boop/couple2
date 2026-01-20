@@ -20,7 +20,8 @@ import {
   subscribePosts, addPost, updatePost, deletePost,
   subscribeChecklist, addChecklistItem, updateChecklistItem, deleteChecklistItem,
   subscribeBucketList, addBucketItem, updateBucketItem, deleteBucketItem,
-  subscribeChecklistGroups, addChecklistGroup, deleteChecklistGroup
+  subscribeChecklistGroups, addChecklistGroup, deleteChecklistGroup,
+  getCoupleUsers
 } from './services/db';
 // Cat Theme Click Interaction
 const useCatEffect = (theme) => {
@@ -86,7 +87,7 @@ const Logo = ({ size = 40, className = "" }) => (
 );
 
 const App = () => {
-  const { currentUser, userData, logout } = useAuth(); // Auth
+  const { currentUser, userData, logout, connectPartner } = useAuth(); // Auth
 
   // Settings State (Default values)
   const [settings, setSettings] = useState({
@@ -99,6 +100,7 @@ const App = () => {
   });
 
   const [posts, setPosts] = useState([]); // Loaded from DB
+  const [coupleUsers, setCoupleUsers] = useState([]);
 
   const [activeTab, setActiveTabState] = useState('feed');
   const [direction, setDirection] = useState('right');
@@ -219,6 +221,8 @@ const App = () => {
     getCoupleSettings(userData.coupleId).then(data => {
       if (data) setSettings(prev => ({ ...prev, ...data }));
     });
+    // Fetch Users
+    getCoupleUsers(userData.coupleId).then(setCoupleUsers);
 
     // 2. Subscriptions
     const unsubPosts = subscribePosts(userData.coupleId, setPosts);
@@ -277,7 +281,7 @@ const App = () => {
     const post = {
       ...newPost,
       media: processedMedia,
-      author: currentUser.uid === userData.coupleId ? 'me' : (userData.email ? 'me' : 'partner'), // Simple logic
+      author: currentUser.uid, // Save UID as author
       date: newPost.date,
     };
 
@@ -334,7 +338,11 @@ const App = () => {
           </div>
           {!isSidebarCollapsed && (
             <div className="overflow-hidden whitespace-nowrap animate-fadeIn">
-              <span className="font-black text-xl text-primary block truncate transition-colors duration-300">{settings.appTitle || 'Our Story'}</span>
+              <span className="font-black text-xl text-primary block truncate transition-colors duration-300">
+                {coupleUsers.length === 2
+                  ? <span className="text-base">{coupleUsers[0].name} <span className="text-red-500">❤️</span> {coupleUsers[1].name}</span>
+                  : (settings.appTitle || 'Our Story')}
+              </span>
               <p className="text-xs text-secondary font-medium truncate">{settings.appSubtitle || '우리의 이야기'}</p>
             </div>
           )}
@@ -422,7 +430,11 @@ const App = () => {
       <header className={`lg:hidden sticky top-0 border-b border-theme-100 z-30 px-5 transition-all duration-300 flex justify-between items-center ${isScrolled ? 'py-3 bg-white/90 backdrop-blur-md shadow-sm' : 'py-5 bg-transparent backdrop-blur-sm'}`}>
         <div className={`flex items-center gap-3 transition-transform duration-300 ${isScrolled ? 'scale-90 origin-left' : 'scale-100'}`}>
           <Logo size={isScrolled ? 32 : 40} />
-          <span className="font-black text-lg bg-gradient-to-r from-theme-500 to-pink-500 bg-clip-text text-transparent">{settings.appTitle || 'Our Story'}</span>
+          <span className="font-black text-lg bg-gradient-to-r from-theme-500 to-pink-500 bg-clip-text text-transparent">
+            {coupleUsers.length === 2
+              ? <span className="text-sm text-black flex items-center gap-1">{coupleUsers[0].name} <span className="text-red-500">❤️</span> {coupleUsers[1].name}</span>
+              : (settings.appTitle || 'Our Story')}
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <div className="bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">D+{dDay}</div>
@@ -992,6 +1004,7 @@ const App = () => {
             isEditMode={isEditMode}
             onEdit={() => { setEditingPost({ ...selectedPost }); setSelectedPost(null); }}
             onDelete={() => { setDeleteConfirm(selectedPost.id); setSelectedPost(null); }}
+            coupleUsers={coupleUsers}
           />
         )
       }
@@ -1006,6 +1019,30 @@ const App = () => {
               <p className="text-secondary text-sm">우리의 정보를 수정해요</p>
             </div>
             <form onSubmit={(e) => { e.preventDefault(); setIsSettingsOpen(false); }} className="space-y-5">
+
+              {/* Couple Connection Section */}
+              <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                <h4 className="font-bold text-sm text-gray-500 mb-3 flex items-center gap-2"><Icon name="link" size={14} /> 커플 연동</h4>
+                <div className="flex items-center justify-between mb-4 bg-white p-3 rounded-xl border border-gray-200">
+                  <span className="text-secondary text-sm font-medium">내 초대 코드</span>
+                  <span className="font-black text-xl text-theme-600 tracking-widest">{settings.inviteCode || '...'}</span>
+                </div>
+
+                {coupleUsers.length < 2 ? (
+                  <div className="flex gap-2">
+                    <input type="text" placeholder="상대방 코드 6자리" id="partnerCodeInput" className="bg-white border-2 border-transparent focus:border-theme-300 rounded-xl px-3 py-3 text-sm flex-1 outline-none text-center font-bold tracking-widest" maxLength={6} />
+                    <button type="button" onClick={() => {
+                      const code = document.getElementById('partnerCodeInput').value;
+                      if (code) connectPartner(code).catch(e => alert(e.message));
+                    }} className="bg-theme-500 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-theme btn-bounce">연결</button>
+                  </div>
+                ) : (
+                  <div className="text-center p-2 bg-green-50 text-green-600 rounded-xl font-bold text-sm">
+                    ❤️ {coupleUsers.find(u => u.uid !== currentUser?.uid)?.name || '파트너'}님과 연결되었습니다!
+                  </div>
+                )}
+              </div>
+
               <InputField label="우리 이름" value={settings.coupleName} onChange={v => setSettings({ ...settings, coupleName: v })} placeholder="예: 우진 & 유나" />
               <div className="grid grid-cols-2 gap-4">
                 <InputField label="메인 타이틀" value={settings.appTitle || ''} onChange={v => setSettings({ ...settings, appTitle: v })} placeholder="Our Story" />
@@ -1094,7 +1131,7 @@ const App = () => {
 
 
 // 상세 보기 컴포넌트 (전체 리디자인)
-const DetailView = ({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, onDelete }) => {
+const DetailView = ({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, onDelete, coupleUsers }) => {
   const [currentIndex, setCurrentIndex] = useState(post.initialIndex || 0);
   const moodInfo = getMoodInfo(post.mood);
   const media = post.media || [];
@@ -1184,10 +1221,10 @@ const DetailView = ({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, 
             {/* 작성자 */}
             <div className="flex items-center gap-3 pb-4 border-b border-theme-100">
               <div className="w-10 h-10 gradient-theme rounded-full flex items-center justify-center text-white font-bold">
-                {(post.author === 'me' ? settings.myName : settings.partnerName).charAt(0)}
+                {((coupleUsers?.find(u => u.uid === post.author)?.name) || '나').charAt(0)}
               </div>
               <div>
-                <p className="font-bold text-primary">{post.author === 'me' ? settings.myName : settings.partnerName}의 기록</p>
+                <p className="font-bold text-primary">{(coupleUsers?.find(u => u.uid === post.author)?.name) || '나'}의 기록</p>
                 <p className="text-xs text-secondary">{settings.coupleName}</p>
               </div>
             </div>

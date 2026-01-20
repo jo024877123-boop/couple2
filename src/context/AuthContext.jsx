@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { auth, db } from '../lib/firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'; // Google Auth
+import { doc, getDoc, setDoc, updateDoc, collection, serverTimestamp } from 'firebase/firestore'; // DB Operations
+import { findCoupleByInviteCode } from '../services/db';
 
 const AuthContext = createContext();
 
@@ -18,12 +19,14 @@ export function AuthProvider({ children }) {
     async function signup(email, password, name) {
         const res = await createUserWithEmailAndPassword(auth, email, password);
         const user = res.user;
+        const inviteCode = Math.floor(100000 + Math.random() * 900000).toString(); // Generate 6-digit code
 
         // Create new Couple Document
         const coupleRef = doc(collection(db, 'couples'));
         await setDoc(coupleRef, {
             createdAt: serverTimestamp(),
             coupleName: '우리',
+            inviteCode, // Save code
             anniversaryDate: new Date().toISOString().split('T')[0],
             theme: 'simple',
             appTitle: 'Our Story',
@@ -41,10 +44,54 @@ export function AuthProvider({ children }) {
         return user;
     }
 
-    // Link to existing couple (Feature for partner) - Not fully implemented yet
-    async function joinCouple(email, password, name, coupleCode) {
-        // Logic to find couple by code and link user
+    // Google Login
+    async function loginWithGoogle() {
+        const provider = new GoogleAuthProvider();
+        const res = await signInWithPopup(auth, provider);
+        const user = res.user;
+
+        // Check if existing user
+        const docRef = doc(db, 'users', user.uid);
+        const docSnap = await getDoc(docRef);
+
+        if (!docSnap.exists()) {
+            // New User -> Create Couple
+            const inviteCode = Math.floor(100000 + Math.random() * 900000).toString();
+            const coupleRef = doc(collection(db, 'couples'));
+            await setDoc(coupleRef, {
+                createdAt: serverTimestamp(),
+                coupleName: '우리',
+                inviteCode,
+                anniversaryDate: new Date().toISOString().split('T')[0],
+                theme: 'simple',
+                appTitle: 'Our Story',
+                appSubtitle: '우리의 이야기'
+            });
+
+            await setDoc(docRef, {
+                email: user.email,
+                name: user.displayName || '이름 없음',
+                coupleId: coupleRef.id,
+                createdAt: serverTimestamp()
+            });
+        }
     }
+
+    // Connect Partner (Merge Couple)
+    async function connectPartner(code) {
+        if (!currentUser) return;
+        const couple = await findCoupleByInviteCode(code);
+        if (!couple) throw new Error('유효하지 않은 초대 코드입니다.');
+
+        // Update my coupleId to target couple
+        const userRef = doc(db, 'users', currentUser.uid);
+        await updateDoc(userRef, { coupleId: couple.id });
+
+        // Reload to refresh context
+        window.location.reload();
+    }
+
+
 
     function login(email, password) {
         return signInWithEmailAndPassword(auth, email, password);
@@ -80,6 +127,8 @@ export function AuthProvider({ children }) {
         userData,
         signup,
         login,
+        loginWithGoogle,
+        connectPartner,
         logout
     };
 
