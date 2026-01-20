@@ -257,6 +257,32 @@ export function AuthProvider({ children }) {
         window.location.reload();
     }
 
+    // ========== FORCE START NEW COUPLE ==========
+    async function startNewCouple() {
+        if (!currentUser) return;
+
+        // Create brand new couple
+        const coupleRef = doc(collection(db, 'couples'));
+        await setDoc(coupleRef, {
+            inviteCode: null,
+            user1: currentUser.uid,
+            user2: null,
+            coupleName: '우리',
+            anniversaryDate: new Date().toISOString().split('T')[0],
+            theme: 'simple',
+            createdAt: serverTimestamp()
+        });
+
+        // Update user
+        const userRef = doc(db, 'users', currentUser.uid);
+        await updateDoc(userRef, {
+            coupleId: coupleRef.id
+        });
+
+        // Reload to apply changes
+        window.location.reload();
+    }
+
     // ========== DELETE COUPLE DATA ==========
     async function deleteCouple(coupleId) {
         // Delete subcollections (posts, checklist, bucketlist)
@@ -326,6 +352,7 @@ export function AuthProvider({ children }) {
         resetPassword,
         connectWithCode,
         generateInviteCode,
+        startNewCouple,
         disconnectCouple,
         logout,
         isAdmin,

@@ -89,7 +89,7 @@ const Logo = ({ size = 40, className = "" }) => (
 );
 
 const App = () => {
-  const { currentUser, userData, logout, connectWithCode, generateInviteCode, disconnectCouple, isAdmin, setUserData } = useAuth();
+  const { currentUser, userData, logout, connectWithCode, generateInviteCode, startNewCouple, disconnectCouple, isAdmin, setUserData } = useAuth();
   const [adminViewTarget, setAdminViewTarget] = useState(null); // Couple ID to monitor
 
   // Settings State (Default values)
@@ -1182,6 +1182,22 @@ const App = () => {
                   로그아웃
                 </span>
               </button>
+
+              {/* Debug & Troubleshooting */}
+              <div className="mt-6 pt-6 border-t border-gray-100 text-center">
+                <p className="text-[10px] text-gray-300 mb-2">Debug Info: {userData?.coupleId?.slice(0, 8)}...</p>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (confirm('⚠️정말 초기화하시겠습니까?\n\n현재 연결된 커플 정보를 버리고, 완전히 새로운 커플 페이지를 생성합니다.\n이 작업은 되돌릴 수 없습니다.')) {
+                      await startNewCouple();
+                    }
+                  }}
+                  className="text-xs text-gray-400 underline hover:text-red-500 transition-colors"
+                >
+                  데이터 초기화 및 새 커플 시작 (오류 해결용)
+                </button>
+              </div>
             </form>
           </BottomSheet>
         )
