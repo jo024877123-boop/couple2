@@ -49,12 +49,16 @@ export const updateCoupleSettings = async (coupleId, settings) => {
 export const subscribePosts = (coupleId, callback) => {
     const q = query(
         collection(db, `couples/${coupleId}/posts`),
-        orderBy('date', 'desc'),
-        orderBy('createdAt', 'desc')
+        orderBy('date', 'desc')
+        // Removing secondary sort 'createdAt' to avoid index requirements for now
     );
     return onSnapshot(q, (snapshot) => {
         const posts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         callback(posts);
+    }, (error) => {
+        console.error("Post subscription error:", error);
+        if (error.code === 'permission-denied') alert('데이터 접근 권한이 없습니다.');
+        if (error.code === 'failed-precondition') alert('쿼리 인덱스가 필요합니다. (개발자 확인 필요)');
     });
 };
 
