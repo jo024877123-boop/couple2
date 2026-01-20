@@ -18,6 +18,7 @@ import OnboardingView from './components/features/OnboardingView'; // Onboarding
 import AdminDashboard from './components/features/AdminDashboard'; // Admin Dashboard
 import GrowthWidget from './components/features/GrowthWidget'; // Growth Widget
 import AchievementModal from './components/features/AchievementModal'; // Achievement Modal
+import BalanceGameCard from './components/features/BalanceGameCard'; // Balance Game
 import { useDrag } from '@use-gesture/react';
 import { useAuth } from './context/AuthContext'; // Auth Hook
 import {
@@ -314,6 +315,73 @@ const App = () => {
       unsubAnniversaries();
     };
   }, [userData?.coupleId]);
+
+  // Anniversary Reminder Notifications
+  useEffect(() => {
+    if (!settings.anniversaryDate && anniversaries.length === 0) return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString().slice(0, 10);
+
+    // 오늘 이미 알림을 보냈는지 체크
+    const lastNotificationDate = localStorage.getItem('lastReminderDate');
+    if (lastNotificationDate === todayStr) return;
+
+    const reminders = [];
+
+    // 메인 기념일 체크
+    if (settings.anniversaryDate) {
+      const anniversaryDate = new Date(settings.anniversaryDate);
+      const thisYearAnniversary = new Date(today.getFullYear(), anniversaryDate.getMonth(), anniversaryDate.getDate());
+      if (thisYearAnniversary < today) {
+        thisYearAnniversary.setFullYear(today.getFullYear() + 1);
+      }
+      const diffDays = Math.ceil((thisYearAnniversary - today) / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 7) reminders.push({ title: '사귄 기념일', days: 7 });
+      if (diffDays === 1) reminders.push({ title: '사귄 기념일', days: 1 });
+      if (diffDays === 0) reminders.push({ title: '사귄 기념일', days: 0 });
+    }
+
+    // 커스텀 기념일들 체크
+    anniversaries.forEach(ann => {
+      const annDate = new Date(ann.date);
+      const thisYearAnn = new Date(today.getFullYear(), annDate.getMonth(), annDate.getDate());
+      if (thisYearAnn < today) {
+        thisYearAnn.setFullYear(today.getFullYear() + 1);
+      }
+      const diffDays = Math.ceil((thisYearAnn - today) / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 7) reminders.push({ title: ann.title, days: 7 });
+      if (diffDays === 1) reminders.push({ title: ann.title, days: 1 });
+      if (diffDays === 0) reminders.push({ title: ann.title, days: 0 });
+    });
+
+    // 알림 표시
+    if (reminders.length > 0) {
+      localStorage.setItem('lastReminderDate', todayStr);
+
+      // 브라우저 알림 권한 요청
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+
+      reminders.forEach(reminder => {
+        const message = reminder.days === 0
+          ? `🎉 오늘은 "${reminder.title}"이에요!`
+          : `💝 "${reminder.title}"이 ${reminder.days}일 남았어요!`;
+
+        // 브라우저 알림
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('기념일 알림 💕', { body: message, icon: '/icon-192.png' });
+        }
+
+        // 앱 내 알림
+        setTimeout(() => alert(message), 500);
+      });
+    }
+  }, [settings.anniversaryDate, anniversaries]);
 
   // Scroll effect - must be before conditional returns
   useEffect(() => {
@@ -756,6 +824,16 @@ const App = () => {
                 onCheckIn={handleAttendanceCheck}
               />
 
+              {/* 오늘의 밸런스 게임 */}
+              <BalanceGameCard
+                settings={settings}
+                coupleUsers={coupleUsers}
+                currentUser={userData}
+                onUpdateSettings={async (updates) => {
+                  await updateCoupleSettings(userData.coupleId, updates);
+                  setSettings(prev => ({ ...prev, ...updates }));
+                }}
+              />
               {posts.length === 0 ? (
                 <EmptyState onAdd={() => setIsModalOpen(true)} />
               ) : (
