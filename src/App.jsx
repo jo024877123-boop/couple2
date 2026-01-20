@@ -93,14 +93,30 @@ const App = () => {
   const { currentUser, userData, logout, connectWithCode, generateInviteCode, startNewCouple, disconnectCouple, isAdmin, setUserData } = useAuth();
   const [adminViewTarget, setAdminViewTarget] = useState(null); // Couple ID to monitor
 
-  // Settings State (Default values)
-  const [settings, setSettings] = useState({
-    coupleName: '우리', anniversaryDate: new Date().toISOString().split('T')[0],
-    myName: '나', partnerName: '당신', theme: 'simple', appTitle: 'Our Story', appSubtitle: '우리의 이야기',
-    customTabs: { feed: 'Timeline', gallery: 'Gallery', checklist: 'Checklist', bucket: 'Bucket List', calendar: 'Anniversary' },
-    customHeaders: { feed: '우리의 모든 순간', gallery: '추억 저장소', checklist: '체크리스트', bucket: '버킷리스트', calendar: '우리의 기념일' },
-    customIcons: { feed: '📖', gallery: '🖼️', checklist: '✅', bucket: '⭐', calendar: '📅' },
-    adminPassword: '11'
+  // Settings State (Default values with LocalStorage Fallback)
+  const [settings, setSettings] = useState(() => {
+    try {
+      const saved = localStorage.getItem('couple_settings');
+      const initial = {
+        coupleName: '우리', anniversaryDate: new Date().toISOString().split('T')[0],
+        myName: '나', partnerName: '당신', theme: 'simple', appTitle: 'Our Story', appSubtitle: '우리의 이야기',
+        customTabs: { feed: 'Timeline', gallery: 'Gallery', checklist: 'Checklist', bucket: 'Bucket List', calendar: 'Anniversary' },
+        customHeaders: { feed: '우리의 모든 순간', gallery: '추억 저장소', checklist: '체크리스트', bucket: '버킷리스트', calendar: '우리의 기념일' },
+        customIcons: { feed: '📖', gallery: '🖼️', checklist: '✅', bucket: '⭐', calendar: '📅' },
+        adminPassword: '11'
+      };
+      return saved ? { ...initial, ...JSON.parse(saved) } : initial;
+    } catch (e) {
+      console.error('Failed to load settings from localStorage', e);
+      return {
+        coupleName: '우리', anniversaryDate: new Date().toISOString().split('T')[0],
+        myName: '나', partnerName: '당신', theme: 'simple', appTitle: 'Our Story', appSubtitle: '우리의 이야기',
+        customTabs: { feed: 'Timeline', gallery: 'Gallery', checklist: 'Checklist', bucket: 'Bucket List', calendar: 'Anniversary' },
+        customHeaders: { feed: '우리의 모든 순간', gallery: '추억 저장소', checklist: '체크리스트', bucket: '버킷리스트', calendar: '우리의 기념일' },
+        customIcons: { feed: '📖', gallery: '🖼️', checklist: '✅', bucket: '⭐', calendar: '📅' },
+        adminPassword: '11'
+      };
+    }
   });
 
   const [posts, setPosts] = useState([]); // Loaded from DB
@@ -312,6 +328,12 @@ const App = () => {
 
   const handleSettingsUpdate = async (newSettings) => {
     setSettings(newSettings);
+    try {
+      localStorage.setItem('couple_settings', JSON.stringify(newSettings));
+    } catch (e) {
+      console.error('Failed to save to localStorage', e);
+    }
+
     if (userData?.coupleId) {
       try {
         console.log('Saving settings...', newSettings);
@@ -322,7 +344,7 @@ const App = () => {
         alert(`저장 실패: ${error.message} (${error.code})`);
       }
     } else {
-      alert("오류: 커플 ID를 찾을 수 없습니다.");
+      console.warn("Couple ID missing, saved locally only.");
     }
   };
 
