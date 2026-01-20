@@ -638,21 +638,15 @@ const App = () => {
 
       {/* 모바일 헤더 */}
       <header className={`lg:hidden sticky top-0 border-b border-theme-100 z-30 px-4 transition-all duration-300 flex justify-between items-center ${isScrolled ? 'py-2 bg-white/95 backdrop-blur-md shadow-sm' : 'py-4 bg-transparent backdrop-blur-sm'}`}>
-        <div className={`flex items-center gap-2 transition-transform duration-300 ${isScrolled ? 'scale-95 origin-left' : 'scale-100'}`}>
-          <button onClick={() => setIsMobileMenuOpen(true)} className="mr-1 text-secondary p-1 active:scale-90 transition-transform">
+        <div
+          onClick={() => { setActiveTab('feed'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+          className={`flex items-center gap-2 transition-transform duration-300 ${isScrolled ? 'scale-95 origin-left' : 'scale-100'} cursor-pointer active:opacity-80`}
+        >
+          <button onClick={(e) => { e.stopPropagation(); setIsMobileMenuOpen(true); }} className="mr-1 text-secondary p-1 active:scale-90 transition-transform">
             <Icon name="menu" size={24} />
           </button>
           <Logo size={isScrolled ? 28 : 34} />
-          <span
-            onClick={() => {
-              const current = settings.appTitle || '';
-              const newTitle = prompt("메인 제목을 입력하세요 (비워두면 커플 이름 표시)", current);
-              if (newTitle !== null) {
-                handleSettingsUpdate({ ...settings, appTitle: newTitle });
-              }
-            }}
-            className="font-black text-lg bg-gradient-to-r from-theme-500 to-pink-500 bg-clip-text text-transparent truncate max-w-[140px] flex items-center cursor-pointer active:opacity-70"
-          >
+          <span className="font-black text-lg bg-gradient-to-r from-theme-500 to-pink-500 bg-clip-text text-transparent truncate max-w-[140px] flex items-center">
             {settings.appTitle || (
               coupleUsers.length === 2
                 ? <span className="text-sm text-black flex items-center gap-1"><span className="truncate max-w-[60px]">{coupleUsers[0].name}</span> <span className="text-red-500 shrink-0 text-[10px]">❤️</span> <span className="truncate max-w-[60px]">{coupleUsers[1].name}</span></span>
@@ -1501,10 +1495,15 @@ const App = () => {
               </div>
 
               <InputField label="우리 이름" value={settings.coupleName} onChange={v => setSettings({ ...settings, coupleName: v })} placeholder="예: 우진 & 유나" />
-              <div className="grid grid-cols-2 gap-4">
-                <InputField label="메인 타이틀" value={settings.appTitle || ''} onChange={v => setSettings({ ...settings, appTitle: v })} placeholder="Our Story" />
-                <InputField label="서브 타이틀" value={settings.appSubtitle || ''} onChange={v => setSettings({ ...settings, appSubtitle: v })} placeholder="우리의 이야기" />
+              <div className="grid grid-cols-4 gap-3">
+                <div className="col-span-3">
+                  <InputField label="메인 제목" value={settings.appTitle || ''} onChange={v => setSettings({ ...settings, appTitle: v })} placeholder="커플 이름 (비우면 자동)" />
+                </div>
+                <div className="col-span-1">
+                  <InputField label="이모지" value={settings.appEmoji || '💖'} onChange={v => setSettings({ ...settings, appEmoji: v })} />
+                </div>
               </div>
+              <InputField label="서브 타이틀" value={settings.appSubtitle || ''} onChange={v => setSettings({ ...settings, appSubtitle: v })} placeholder="우리의 이야기" />
               <div className="hidden">
                 <InputField label="나의 이름" value={settings.myName} onChange={v => setSettings({ ...settings, myName: v })} />
                 <InputField label="상대방 이름" value={settings.partnerName} onChange={v => setSettings({ ...settings, partnerName: v })} />
