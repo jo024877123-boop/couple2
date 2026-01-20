@@ -249,7 +249,7 @@ const App = () => {
 
   // Onboarding Check
   if (!isAdmin && !userData?.onboardingCompleted) {
-    return <OnboardingView userData={userData} coupleId={userData.coupleId} onComplete={() => window.location.reload()} />;
+    return <OnboardingView userData={userData} coupleId={userData.coupleId} userId={currentUser.uid} onComplete={() => window.location.reload()} />;
   }
 
   // Admin Dashboard View
@@ -452,6 +452,14 @@ const App = () => {
             {!isSidebarCollapsed && <span className="font-bold text-sm">앱 설치하기</span>}
           </button>
         </div>
+
+        {/* Logout Button */}
+        <div className="px-4 mb-4">
+          <button onClick={() => { if (confirm('로그아웃 하시겠습니까?')) logout(); }} className={`w-full py-3 rounded-xl border-2 border-red-200 text-red-500 hover:bg-red-50 transition-all btn-bounce flex items-center justify-center ${isSidebarCollapsed ? 'px-0' : 'gap-2'}`}>
+            <Icon name="log-out" size={18} />
+            {!isSidebarCollapsed && <span className="font-bold text-sm">로그아웃</span>}
+          </button>
+        </div>
       </aside>
 
       {/* 모바일 헤더 */}
@@ -471,6 +479,7 @@ const App = () => {
           </button>
           <button onClick={handleThemePicker} className="p-2 text-secondary hover:text-theme-500 transition-colors"><Icon name="palette" size={20} /></button>
           <button onClick={handleSettingsOpen} className="p-2 text-secondary hover:text-theme-500 transition-colors"><Icon name="settings" size={20} /></button>
+          <button onClick={() => { if (confirm('로그아웃 하시겠습니까?')) logout(); }} className="p-2 text-red-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"><Icon name="log-out" size={20} /></button>
         </div>
       </header>
 

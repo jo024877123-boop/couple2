@@ -3,7 +3,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import Icon from '../ui/Icon';
 
-const OnboardingView = ({ userData, coupleId, onComplete }) => {
+const OnboardingView = ({ userData, coupleId, userId, onComplete }) => {
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
         coupleName: '우리',
@@ -24,7 +24,7 @@ const OnboardingView = ({ userData, coupleId, onComplete }) => {
             });
 
             // Mark onboarding as completed
-            await updateDoc(doc(db, 'users', userData.uid), {
+            await updateDoc(doc(db, 'users', userId), {
                 onboardingCompleted: true,
                 name: formData.myName,
             });
