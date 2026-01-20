@@ -326,14 +326,27 @@ export function AuthProvider({ children }) {
         }
     }
 
+    const [statusMessage, setStatusMessage] = useState('초기화 중...');
+
     // ========== AUTH STATE OBSERVER ==========
     useEffect(() => {
         let unsubscribeUserDoc;
+        let timeoutId;
 
+        // Failsafe: If loading takes too long (e.g. 10s), force stop loading
+        timeoutId = setTimeout(() => {
+            if (loading) {
+                console.error("Auth timeout");
+                setLoading(false);
+                setStatusMessage("응답 시간이 초과되었습니다.");
+            }
+        }, 15000);
+
+        setStatusMessage('인증 상태 확인 중...');
         const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
             setCurrentUser(user);
 
-            // Cleanup previous listener if any
+            // Cleanup previous listener
             if (unsubscribeUserDoc) {
                 unsubscribeUserDoc();
                 unsubscribeUserDoc = null;
@@ -341,30 +354,32 @@ export function AuthProvider({ children }) {
 
             if (user) {
                 if (!isAdmin) {
-                    // Real-time subscription to user data
+                    setStatusMessage('사용자 정보 불러오는 중...');
+                    // Real-time subscription
                     unsubscribeUserDoc = onSnapshot(doc(db, 'users', user.uid), (docSnap) => {
+                        clearTimeout(timeoutId); // Success
                         if (docSnap.exists()) {
                             setUserData({ ...docSnap.data(), uid: user.uid });
                         }
-                        // If doc doesn't exist yet (e.g. during signup), we wait.
-                        // setLoading(false) is called inside to ensure we have data or at least tried.
                         setLoading(false);
                     }, (error) => {
+                        clearTimeout(timeoutId);
                         console.error("Auth Error:", error);
-                        // Show alert only for critical errors to help debugging
+                        // Display error in status message
                         if (error.code === 'permission-denied') {
-                            alert('⚠️ 데이터 접근 권한이 없습니다. (Firestore Security Rules)\n잠시 후 다시 시도하거나, 앱을 새로고침 해주세요.');
+                            setStatusMessage('데이터 접근 권한 오류 (Rules)');
+                            alert('⚠️ 데이터 접근 권한이 없습니다. (Firestore Security Rules)');
                         } else {
-                            alert('⚠️ 로그인 오류: ' + error.message);
+                            setStatusMessage('데이터 로드 오류: ' + error.message);
                         }
                         setLoading(false);
                     });
                 } else {
-                    // Admin mode
+                    clearTimeout(timeoutId);
                     setLoading(false);
                 }
             } else {
-                // Logged out
+                clearTimeout(timeoutId);
                 setUserData(null);
                 setLoading(false);
             }
@@ -373,6 +388,7 @@ export function AuthProvider({ children }) {
         return () => {
             unsubscribeAuth();
             if (unsubscribeUserDoc) unsubscribeUserDoc();
+            clearTimeout(timeoutId);
         };
     }, [isAdmin]);
 
@@ -396,8 +412,17 @@ export function AuthProvider({ children }) {
     return (
         <AuthContext.Provider value={value}>
             {loading ? (
-                <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>
-                    ❤️
+                <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+                    <div style={{ fontSize: '3rem' }}>❤️</div>
+                    <div style={{ fontSize: '1rem', color: '#666' }}>{statusMessage}</div>
+                    <button onClick={() => window.location.reload()} style={{ padding: '0.5rem 1rem', border: '1px solid #ddd', borderRadius: '20px', background: 'white' }}>
+                        새로고침
+                    </button>
+                    {statusMessage.includes('초과') && (
+                        <button onClick={() => signOut(auth).then(() => window.location.reload())} style={{ marginTop: '0.5rem', color: 'red', textDecoration: 'underline', background: 'none', border: 'none' }}>
+                            강제 로그아웃
+                        </button>
+                    )}
                 </div>
             ) : children}
         </AuthContext.Provider>
