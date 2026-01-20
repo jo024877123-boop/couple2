@@ -3,12 +3,12 @@ import Icon from '../ui/Icon';
 
 const LEVELS = [
     { level: 1, minExp: 0, next: 100, icon: '🌱', label: '사랑의 씨앗', desc: '작은 씨앗을 심었어요' },
-    { level: 2, minExp: 100, next: 300, icon: '🌿', label: '반짝이는 새싹', desc: '사랑이 싹트고 있어요' },
-    { level: 3, minExp: 300, next: 600, icon: '🎋', label: '자라나는 줄기', desc: '쑥쑥 자라고 있네요' },
-    { level: 4, minExp: 600, next: 1000, icon: '🌳', label: '튼튼한 나무', desc: '비바람에도 끄떡없어요' },
-    { level: 5, minExp: 1000, next: 1500, icon: '✨', label: '풍성한 나무', desc: '그늘이 되어줄게요' },
-    { level: 6, minExp: 1500, next: 2100, icon: '🌸', label: '꽃 피운 나무', desc: '향기로운 추억이 가득' },
-    { level: 7, minExp: 2100, next: Infinity, icon: '🍎', label: '사랑의 결실', desc: '영원한 사랑을 맹세해요' },
+    { level: 2, minExp: 100, next: 500, icon: '🌿', label: '반짝이는 새싹', desc: '사랑이 싹트고 있어요' },
+    { level: 3, minExp: 500, next: 1500, icon: '🎋', label: '자라나는 줄기', desc: '쑥쑥 자라고 있네요' },
+    { level: 4, minExp: 1500, next: 3000, icon: '🌳', label: '튼튼한 나무', desc: '비바람에도 끄떡없어요' },
+    { level: 5, minExp: 3000, next: 5000, icon: '✨', label: '풍성한 나무', desc: '그늘이 되어줄게요' },
+    { level: 6, minExp: 5000, next: 7000, icon: '🌸', label: '꽃 피운 나무', desc: '향기로운 추억이 가득' },
+    { level: 7, minExp: 7000, next: Infinity, icon: '🍎', label: '사랑의 결실', desc: '영원한 사랑을 맹세해요' },
 ];
 
 const GrowthWidget = ({ growth, onLevelUp }) => {

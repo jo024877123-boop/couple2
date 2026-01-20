@@ -280,7 +280,7 @@ const App = () => {
         checkAchieve(7, 'visit_7', 50);
         checkAchieve(30, 'visit_30', 100);
         checkAchieve(100, 'visit_100', 300);
-        checkAchieve(365, 'visit_365', 1000);
+        checkAchieve(365, 'visit_365', 500);
 
         growth.achievements = achievements;
 
@@ -466,8 +466,8 @@ const App = () => {
 
       checkPostAchieve(5, 'post_5', 50);
       checkPostAchieve(10, 'post_10', 100);
-      checkPostAchieve(50, 'post_50', 500);
-      checkPostAchieve(100, 'post_100', 1000);
+      checkPostAchieve(50, 'post_50', 300);
+      checkPostAchieve(100, 'post_100', 500);
 
       if (expBonus > 0 || newExp !== growth.exp) {
         const newGrowth = { ...growth, exp: newExp + expBonus, achievements: newAchievements };
