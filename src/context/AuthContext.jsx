@@ -91,13 +91,26 @@ export function AuthProvider({ children }) {
     async function createMyCoupleSpace() {
         if (!currentUser) return;
 
-        // 이미 공간이 있다면 기존 정보 반환
+        // 이미 공간이 있다면 기존 정보 반환 또는 재발급
         if (userData?.coupleId) {
-            const snap = await getDoc(doc(db, 'couples', userData.coupleId));
+            const coupleRef = doc(db, 'couples', userData.coupleId);
+            const snap = await getDoc(coupleRef);
             if (snap.exists()) {
                 const data = snap.data();
-                return { coupleId: userData.coupleId, inviteCode: data.inviteCode };
+                // 1. 이미 코드가 살아있으면 반환
+                if (data.inviteCode) {
+                    return { coupleId: userData.coupleId, inviteCode: data.inviteCode };
+                }
+                // 2. 코드는 없는데 파트너도 없다면 (오류 상황 or 만료) -> 코드 재발급
+                if (!data.user2) {
+                    const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+                    await updateDoc(coupleRef, { inviteCode: newCode });
+                    return { coupleId: userData.coupleId, inviteCode: newCode };
+                }
+                // 3. 파트너가 있으면 (이미 연결됨) -> 그대로 코드 없이 리턴
+                return { coupleId: userData.coupleId, inviteCode: null };
             }
+            // 문서가 없으면(유령) -> 아래로 흘러가서 새로 생성
         }
 
         const coupleRef = doc(collection(db, 'couples'));
