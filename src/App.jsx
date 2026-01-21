@@ -1555,13 +1555,31 @@ const App = () => {
                           </button>
                         </div>
                       ) : (
-                        <button onClick={async (e) => {
-                          e.preventDefault();
-                          try {
-                            const res = await createMyCoupleSpace();
-                            if (res && res.inviteCode) setGeneratedCode(res.inviteCode);
-                          } catch (err) { alert("생성 실패: " + err.message); }
-                        }} className="w-full py-3 bg-white border border-purple-200 text-purple-600 font-bold rounded-xl hover:bg-purple-50 transition-colors shadow-sm flex items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            const btn = e.currentTarget;
+                            btn.disabled = true;
+                            btn.innerText = "생성 중...";
+                            try {
+                              const res = await createMyCoupleSpace();
+                              if (res && res.inviteCode) {
+                                setGeneratedCode(res.inviteCode);
+                              } else {
+                                alert("코드를 받아오지 못했습니다. 다시 시도해주세요.");
+                              }
+                            } catch (err) {
+                              alert("생성 실패: " + err.message);
+                            } finally {
+                              btn.disabled = false;
+                              // 성공 시엔 리렌더링으로 버튼이 사라질 것임. 실패 시에만 복구.
+                              if (!generatedCode) {
+                                btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> 초대 코드 발급받기';
+                              }
+                            }
+                          }}
+                          className="w-full py-3 bg-white border border-purple-200 text-purple-600 font-bold rounded-xl hover:bg-purple-50 transition-colors shadow-sm flex items-center justify-center gap-2">
                           <Icon name="plus" size={16} /> 초대 코드 발급받기
                         </button>
                       )}
@@ -1799,114 +1817,121 @@ const App = () => {
               })}
             </div>
           </BottomSheet>
-        )}
+        )
+      }
 
       {/* 업적 & 보상 모달 */}
-      {isAchievementOpen && (
-        <AchievementModal onClose={() => setIsAchievementOpen(false)} growth={settings.growth} />
-      )}
+      {
+        isAchievementOpen && (
+          <AchievementModal onClose={() => setIsAchievementOpen(false)} growth={settings.growth} />
+        )
+      }
 
       {/* 모바일 햄버거 메뉴 (Drawer) */}
-      {isMobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex animate-fadeIn bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}>
-          <div className="bg-white w-[280px] h-full shadow-2xl p-6 animate-slideInLeft relative flex flex-col" onClick={e => e.stopPropagation()}>
+      {
+        isMobileMenuOpen && (
+          <div className="lg:hidden fixed inset-0 z-50 flex animate-fadeIn bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}>
+            <div className="bg-white w-[280px] h-full shadow-2xl p-6 animate-slideInLeft relative flex flex-col" onClick={e => e.stopPropagation()}>
 
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-2">
-                <Logo size={28} />
-                <span className="font-black text-lg text-primary">Menu</span>
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-2">
+                  <Logo size={28} />
+                  <span className="font-black text-lg text-primary">Menu</span>
+                </div>
+                <button onClick={() => setIsMobileMenuOpen(false)}><Icon name="x" size={24} className="text-secondary" /></button>
               </div>
-              <button onClick={() => setIsMobileMenuOpen(false)}><Icon name="x" size={24} className="text-secondary" /></button>
-            </div>
 
-            <div className="space-y-2 flex-1 overflow-y-auto">
-              <div className="text-xs font-bold text-gray-400 mb-2 px-2">바로가기</div>
-              {[
-                { id: 'feed', icon: 'layout-grid', label: '타임라인' },
-                { id: 'gallery', icon: 'image', label: '갤러리' },
-                { id: 'checklist', icon: 'check-square', label: '체크리스트' },
-                { id: 'bucket', icon: 'star', label: '버킷리스트' },
-                { id: 'calendar', icon: 'calendar', label: '기념일' },
-              ].map(item => (
-                <button key={item.id}
-                  onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
-                  className={`w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 font-medium transition-colors ${activeTab === item.id ? 'bg-theme-50 text-theme-600' : 'text-gray-600 hover:bg-gray-50'}`}>
-                  {settings.customIcons?.[item.id] ? <span className="text-lg w-[18px] flex justify-center">{settings.customIcons[item.id]}</span> : <Icon name={item.icon} size={18} />}
-                  {settings.customTabs?.[item.id] || item.label}
-                </button>
-              ))}
-
-              <div className="h-px bg-gray-100 my-4" />
-
-              <div className="text-xs font-bold text-gray-400 mb-2 px-2">성장 & 보상</div>
-              <button onClick={() => { setIsAchievementOpen(true); setIsMobileMenuOpen(false); }} className="w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 font-medium text-gray-600 hover:bg-gray-50">
-                <Icon name="trophy" size={18} className="text-yellow-500" />
-                업적 게시판
-              </button>
-              <button onClick={() => { setIsThemePickerOpen(true); setIsMobileMenuOpen(false); }} className="w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 font-medium text-gray-600 hover:bg-gray-50">
-                <Icon name="palette" size={18} className="text-indigo-500" />
-                테마 변경
-              </button>
-
-              <div className="h-px bg-gray-100 my-4" />
-
-              <button onClick={() => { setIsSettingsOpen(true); setIsMobileMenuOpen(false); }} className="w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 font-medium text-gray-600 hover:bg-gray-50">
-                <Icon name="settings" size={18} className="text-gray-400" />
-                설정
-              </button>
-              <button onClick={() => { setIsProfileOpen(true); setIsMobileMenuOpen(false); }} className="w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 font-medium text-gray-600 hover:bg-gray-50">
-                <Icon name="user" size={18} className="text-gray-400" />
-                내 정보
-              </button>
-            </div>
-
-            <div className="text-center text-[10px] text-gray-300 mt-4">
-              v2.1.0 • Built with ❤️
-            </div>
-          </div>
-        </div>
-      )}
-      {/* 관리자 모달 (작고 심플하게) */}
-      {isAdminOpen && (
-        <Modal onClose={() => setIsAdminOpen(false)} small>
-          <ModalHeader title="🛠️ 관리자 설정" subtitle="앱의 문구를 내 마음대로!" onClose={() => setIsAdminOpen(false)} />
-          <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2 scrollbar-hide">
-            <div>
-              <h4 className="font-bold text-sm mb-3 text-secondary">네비게이션 탭 이름</h4>
-              <div className="space-y-3">
-                {['feed', 'gallery', 'checklist', 'bucket', 'calendar'].map(key => (
-                  <InputField key={`tab-${key}`} label={key.toUpperCase()} value={settings.customTabs ? settings.customTabs[key] : ''}
-                    onChange={v => handleSettingsUpdate({ ...settings, customTabs: { ...settings.customTabs, [key]: v } })} />
-                ))}
-              </div>
-            </div>
-            <div className="border-t border-theme-100 pt-6">
-              <h4 className="font-bold text-sm mb-3 text-secondary">페이지 메인 제목</h4>
-              <div className="space-y-3">
+              <div className="space-y-2 flex-1 overflow-y-auto">
+                <div className="text-xs font-bold text-gray-400 mb-2 px-2">바로가기</div>
                 {[
-                  { key: 'feed', label: 'Timeline 제목' },
-                  { key: 'gallery', label: 'Gallery 제목' },
-                  { key: 'checklist', label: 'Checklist 제목' },
-                  { key: 'bucket', label: 'Bucket List 제목' },
-                  { key: 'calendar', label: 'Anniversary 제목' }
+                  { id: 'feed', icon: 'layout-grid', label: '타임라인' },
+                  { id: 'gallery', icon: 'image', label: '갤러리' },
+                  { id: 'checklist', icon: 'check-square', label: '체크리스트' },
+                  { id: 'bucket', icon: 'star', label: '버킷리스트' },
+                  { id: 'calendar', icon: 'calendar', label: '기념일' },
                 ].map(item => (
-                  <div key={`header-${item.key}`} className="flex gap-2">
-                    <div className="w-16">
-                      <InputField label="이모지" value={settings.customIcons ? settings.customIcons[item.key] : ''}
-                        onChange={v => handleSettingsUpdate({ ...settings, customIcons: { ...settings.customIcons, [item.key]: v } })} />
-                    </div>
-                    <div className="flex-1">
-                      <InputField label={item.label}
-                        value={settings.customHeaders ? settings.customHeaders[item.key] : ''}
-                        onChange={v => handleSettingsUpdate({ ...settings, customHeaders: { ...settings.customHeaders, [item.key]: v } })} />
-                    </div>
-                  </div>
+                  <button key={item.id}
+                    onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
+                    className={`w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 font-medium transition-colors ${activeTab === item.id ? 'bg-theme-50 text-theme-600' : 'text-gray-600 hover:bg-gray-50'}`}>
+                    {settings.customIcons?.[item.id] ? <span className="text-lg w-[18px] flex justify-center">{settings.customIcons[item.id]}</span> : <Icon name={item.icon} size={18} />}
+                    {settings.customTabs?.[item.id] || item.label}
+                  </button>
                 ))}
+
+                <div className="h-px bg-gray-100 my-4" />
+
+                <div className="text-xs font-bold text-gray-400 mb-2 px-2">성장 & 보상</div>
+                <button onClick={() => { setIsAchievementOpen(true); setIsMobileMenuOpen(false); }} className="w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 font-medium text-gray-600 hover:bg-gray-50">
+                  <Icon name="trophy" size={18} className="text-yellow-500" />
+                  업적 게시판
+                </button>
+                <button onClick={() => { setIsThemePickerOpen(true); setIsMobileMenuOpen(false); }} className="w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 font-medium text-gray-600 hover:bg-gray-50">
+                  <Icon name="palette" size={18} className="text-indigo-500" />
+                  테마 변경
+                </button>
+
+                <div className="h-px bg-gray-100 my-4" />
+
+                <button onClick={() => { setIsSettingsOpen(true); setIsMobileMenuOpen(false); }} className="w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 font-medium text-gray-600 hover:bg-gray-50">
+                  <Icon name="settings" size={18} className="text-gray-400" />
+                  설정
+                </button>
+                <button onClick={() => { setIsProfileOpen(true); setIsMobileMenuOpen(false); }} className="w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 font-medium text-gray-600 hover:bg-gray-50">
+                  <Icon name="user" size={18} className="text-gray-400" />
+                  내 정보
+                </button>
+              </div>
+
+              <div className="text-center text-[10px] text-gray-300 mt-4">
+                v2.1.0 • Built with ❤️
               </div>
             </div>
           </div>
-        </Modal>
-      )}
+        )
+      }
+      {/* 관리자 모달 (작고 심플하게) */}
+      {
+        isAdminOpen && (
+          <Modal onClose={() => setIsAdminOpen(false)} small>
+            <ModalHeader title="🛠️ 관리자 설정" subtitle="앱의 문구를 내 마음대로!" onClose={() => setIsAdminOpen(false)} />
+            <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2 scrollbar-hide">
+              <div>
+                <h4 className="font-bold text-sm mb-3 text-secondary">네비게이션 탭 이름</h4>
+                <div className="space-y-3">
+                  {['feed', 'gallery', 'checklist', 'bucket', 'calendar'].map(key => (
+                    <InputField key={`tab-${key}`} label={key.toUpperCase()} value={settings.customTabs ? settings.customTabs[key] : ''}
+                      onChange={v => handleSettingsUpdate({ ...settings, customTabs: { ...settings.customTabs, [key]: v } })} />
+                  ))}
+                </div>
+              </div>
+              <div className="border-t border-theme-100 pt-6">
+                <h4 className="font-bold text-sm mb-3 text-secondary">페이지 메인 제목</h4>
+                <div className="space-y-3">
+                  {[
+                    { key: 'feed', label: 'Timeline 제목' },
+                    { key: 'gallery', label: 'Gallery 제목' },
+                    { key: 'checklist', label: 'Checklist 제목' },
+                    { key: 'bucket', label: 'Bucket List 제목' },
+                    { key: 'calendar', label: 'Anniversary 제목' }
+                  ].map(item => (
+                    <div key={`header-${item.key}`} className="flex gap-2">
+                      <div className="w-16">
+                        <InputField label="이모지" value={settings.customIcons ? settings.customIcons[item.key] : ''}
+                          onChange={v => handleSettingsUpdate({ ...settings, customIcons: { ...settings.customIcons, [item.key]: v } })} />
+                      </div>
+                      <div className="flex-1">
+                        <InputField label={item.label}
+                          value={settings.customHeaders ? settings.customHeaders[item.key] : ''}
+                          onChange={v => handleSettingsUpdate({ ...settings, customHeaders: { ...settings.customHeaders, [item.key]: v } })} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </Modal>
+        )
+      }
 
       {/* 커플 연결 모달 */}
       {isConnectModalOpen && <ConnectModal onClose={() => setIsConnectModalOpen(false)} />}
