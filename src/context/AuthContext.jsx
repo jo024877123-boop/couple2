@@ -226,74 +226,60 @@ export function AuthProvider({ children }) {
         }
     }
 
-    // ========== OBSERVER ==========
+    // 1. Auth State Observer
     useEffect(() => {
-        // 안전장치: 10초 뒤에는 무조건 로딩 끝냄 (무한 로딩 방지)
-        const safetyTimer = setTimeout(() => {
-            setLoading((prev) => {
-                if (prev) {
-                    console.warn("⚠️ Auth loading timed out. Forcing load completion.");
-                    return false;
-                }
-                return prev;
-            });
-        }, 10000);
-
-        const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-            try {
-                if (user) {
-                    setCurrentUser(user);
-                    // Fast Fetch for Initial Load
-                    const userRef = doc(db, 'users', user.uid);
-                    const userSnap = await getDoc(userRef);
-
-                    if (userSnap.exists()) {
-                        const uData = { ...userSnap.data(), uid: user.uid };
-                        setUserData(uData);
-
-                        if (uData.coupleId) {
-                            // Fetch couple data immediately
-                            const coupleSnap = await getDoc(doc(db, 'couples', uData.coupleId));
-                            if (coupleSnap.exists()) {
-                                setCoupleData({ ...coupleSnap.data(), id: coupleSnap.id });
-                            }
-                        }
-                    }
-
-                    // Setup Real-time Listeners (runs in background)
-                    // Note: We don't block loading on listeners to prevent delay
-                    const unsubUser = onSnapshot(userRef, (doc) => {
-                        if (doc.exists()) {
-                            const newData = { ...doc.data(), uid: user.uid };
-                            setUserData(newData);
-                            // If coupleId changed or exists, listen to couple
-                            if (newData.coupleId) {
-                                onSnapshot(doc(db, 'couples', newData.coupleId), (cDoc) => {
-                                    if (cDoc.exists()) setCoupleData({ ...cDoc.data(), id: cDoc.id });
-                                    else setCoupleData(null);
-                                });
-                            }
-                        }
-                    });
-
-                } else {
-                    setCurrentUser(null);
-                    setUserData(null);
-                    setCoupleData(null);
-                }
-            } catch (err) {
-                console.error("Auth Load Error:", err);
-            } finally {
+        const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+            setCurrentUser(user);
+            setLoading(true);
+            if (!user) {
+                setUserData(null);
+                setCoupleData(null);
                 setLoading(false);
-                clearTimeout(safetyTimer);
             }
         });
-
-        return () => {
-            unsubscribeAuth();
-            clearTimeout(safetyTimer);
-        };
+        return () => unsubscribeAuth();
     }, []);
+
+    // 2. User Data Subscription
+    useEffect(() => {
+        if (!currentUser || isAdmin) return;
+
+        console.log("📡 [Auth] Subscribing to user:", currentUser.uid);
+        const unsubUser = onSnapshot(doc(db, 'users', currentUser.uid), (docSnap) => {
+            if (docSnap.exists()) {
+                const newData = { ...docSnap.data(), uid: currentUser.uid };
+                // Deep equality check to avoid infinite loops if needed, but basic object spread is usually fine if fields change
+                setUserData(newData);
+            }
+            // User loaded, allows couple subscription to start
+        });
+
+        return () => unsubUser();
+    }, [currentUser, isAdmin]);
+
+    // 3. Couple Data Subscription
+    useEffect(() => {
+        if (!userData?.coupleId || isAdmin) {
+            if (!userData?.coupleId) setCoupleData(null);
+            setLoading(false); // User loaded, no couple, stop loading
+            return;
+        }
+
+        console.log("📡 [Auth] Subscribing to couple:", userData.coupleId);
+        const unsubCouple = onSnapshot(doc(db, 'couples', userData.coupleId), (docSnap) => {
+            if (docSnap.exists()) {
+                setCoupleData({ ...docSnap.data(), id: docSnap.id });
+            } else {
+                setCoupleData(null);
+            }
+            setLoading(false); // Couple loaded, stop loading
+        }, (err) => {
+            console.error("Couple Sync Error:", err);
+            setLoading(false);
+        });
+
+        return () => unsubCouple();
+    }, [userData?.coupleId, isAdmin]);
 
     // **핵심**: 올바르게 연결된 상태인지 판별
     // coupleData가 존재하고, user1과 user2가 모두 존재해야 함

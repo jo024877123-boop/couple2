@@ -14,19 +14,23 @@ const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings 
     if (!settings || !settings.coupleName) return null;
 
     const today = new Date().toISOString().slice(0, 10);
+    // 빈 객체가 아니라 진짜 데이터가 없으면 초기값 사용
     const gameData = settings.balanceGameV2 || { completedIds: [], todayAnswers: {}, todayDate: '', questionId: null };
 
-    // 날짜 변경 체크
-    const isNewDay = gameData.todayDate !== today;
+    // 날짜 변경 체크 (DB 날짜가 있고, 오늘과 다르면 New Day)
+    // DB 날짜가 아예 없으면(첫 실행) New Day
+    const isNewDay = gameData.todayDate && gameData.todayDate !== today;
+    const isFirstRun = !gameData.todayDate;
 
     // -------------------------------------------------------------------------
     // 1. 오늘의 질문 결정 로직
     // -------------------------------------------------------------------------
-    let currentQuestionId = isNewDay ? null : gameData.questionId;
-    let completedIds = isNewDay ? (gameData.completedIds || []) : (gameData.completedIds || []);
-    let todayAnswers = isNewDay ? {} : (gameData.todayAnswers || {});
+    // 기존 질문 ID가 유효하면 유지
+    let currentQuestionId = (!isNewDay && gameData.questionId) ? gameData.questionId : null;
+    let completedIds = gameData.completedIds || [];
+    let todayAnswers = (!isNewDay && gameData.todayAnswers) ? gameData.todayAnswers : {};
 
-    // 오늘 질문이 없으면 새로 선정
+    // 질문이 없으면 새로 선정
     let todayQuestion;
     if (currentQuestionId) {
         todayQuestion = BALANCE_QUESTIONS.find(q => q.id === currentQuestionId) || BALANCE_QUESTIONS[0];
@@ -36,22 +40,39 @@ const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings 
 
     // 초기화 로직 (DB 업데이트)
     useEffect(() => {
-        // 중요한 포인트: settings가 로드된 상태에서만 실행
-        if (settings.coupleName && (isNewDay || !gameData.questionId)) {
+        // 데이터가 아직 로드 중일 수 있으므로 방어
+        if (!settings.coupleName) return;
+
+        // 1. 날짜가 지났거나
+        // 2. 처음 실행이거나 (날짜 없음)
+        // 3. 질문 ID가 누락되었을 때
+        const needsInit = isNewDay || isFirstRun || !gameData.questionId;
+
+        if (needsInit) {
+            console.log("🔄 밸런스 게임 초기화 조건 충족:", { isNewDay, isFirstRun, noQId: !gameData.questionId });
+
+            const newCompletedIds = isNewDay ? completedIds : completedIds; // 날짜 지났다고 completedIds를 비우진 않음 (영구 기록)
+            // 주의: questionId가 바뀔 때만 저장해야 함
+
             const initGameData = {
                 ...gameData,
                 todayDate: today,
-                todayAnswers: {},
+                todayAnswers: {}, // 새 날이면 답변 초기화
                 questionId: todayQuestion.id,
-                completedIds: completedIds // 기존 완료 목록 유지
+                completedIds: newCompletedIds
             };
-            // 무한 루프 방지: 값이 진짜 다를 때만 업데이트
-            if (JSON.stringify(initGameData) !== JSON.stringify(gameData)) {
-                console.log("🔄 밸런스 게임 일일 초기화 실행");
+
+            // 무한 루프 방지: DB값과 다를 때만 업데이트
+            // JSON stringify 비교는 순서에 따라 다를 수 있으나, 여기선 간단 비교
+            if (JSON.stringify(initGameData.todayAnswers) !== JSON.stringify(gameData.todayAnswers) ||
+                initGameData.todayDate !== gameData.todayDate ||
+                initGameData.questionId !== gameData.questionId) {
+
+                console.log("💾 밸런스 게임 데이터 저장 실행");
                 onUpdateSettings({ balanceGameV2: initGameData });
             }
         }
-    }, [isNewDay, today, todayQuestion.id, settings.coupleName]); // 의존성 최소화
+    }, [isNewDay, isFirstRun, today, todayQuestion.id, settings.balanceGameV2]); // settings 전체 대신 balanceGameV2만 의존성 확인
 
     // -------------------------------------------------------------------------
     // 2. 남은 시간 카운트다운 (00:00:00 까지)
