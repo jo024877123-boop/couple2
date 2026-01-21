@@ -14,7 +14,13 @@ const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings,
     // 설정이 아직 로드되지 않았으면 렌더링 보류
     if (!settings || !settings.coupleName) return null;
 
-    const today = new Date().toISOString().slice(0, 10);
+    // KST(한국시간) or Local Time 기준으로 날짜 생성 (UTC 문제 해결)
+    const getLocalISODate = () => {
+        const d = new Date();
+        const offset = d.getTimezoneOffset() * 60000;
+        return new Date(d.getTime() - offset).toISOString().slice(0, 10);
+    };
+    const today = getLocalISODate();
     // gameData가 없으면 빈 객체 ({}) - 서버 데이터를 우선 사용
     const gameData = serverGameData || settings.balanceGameV2 || {};
 

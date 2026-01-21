@@ -211,7 +211,12 @@ const App = () => {
   const handleAttendanceCheck = async () => {
     if (!userData?.coupleId) return;
 
-    const today = new Date().toISOString().slice(0, 10);
+    const getLocalISODate = () => {
+      const d = new Date();
+      const offset = d.getTimezoneOffset() * 60000;
+      return new Date(d.getTime() - offset).toISOString().slice(0, 10);
+    };
+    const today = getLocalISODate();
     let growth = settings.growth ? JSON.parse(JSON.stringify(settings.growth)) : { level: 1, exp: 0, lastVisit: '', totalVisits: 0, achievements: [] };
 
     if (growth.lastVisit === today) {
