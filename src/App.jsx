@@ -832,13 +832,14 @@ const App = () => {
                   setSettings(prev => ({ ...prev, growth: newGrowth }));
 
                   if (nextLevel.level === 7) {
-                    setIsEndingOpen(true); // Trigger Hidden Ending
+                    alert("🎉 축하합니다! 최종 레벨에 도달하여 '히든 엔딩'이 해금되었습니다!\n위젯의 버튼을 눌러 확인해보세요 🎬");
                   } else {
                     alert(`🎉 축하합니다! 사랑의 나무가 "${nextLevel.label}"로 성장했습니다!`);
                   }
                 }}
                 onClick={() => setIsAchievementOpen(true)}
                 onCheckIn={handleAttendanceCheck}
+                onShowEnding={() => setIsEndingOpen(true)}
               />
 
               {/* 오늘의 밸런스 게임 */}
