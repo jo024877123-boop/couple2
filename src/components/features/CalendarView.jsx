@@ -524,7 +524,7 @@ const CalendarView = ({
             </div>
 
             {/* 상세 모달 */}
-            {/* 상세 모달 (Bottom Sheet on Mobile) */}
+            {/* 상세 모달 (Standard Popup) */}
             <AnimatePresence>
                 {isModalOpen && selectedDate && (
                     <>
@@ -535,26 +535,14 @@ const CalendarView = ({
                             className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
                             onClick={() => setIsModalOpen(false)}
                         />
-                        <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center pointer-events-none">
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
                             <motion.div
-                                initial={{ y: "100%" }}
-                                animate={{ y: 0 }}
-                                exit={{ y: "100%" }}
-                                transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                                drag="y"
-                                dragConstraints={{ top: 0, bottom: 0 }}
-                                dragElastic={{ top: 0, bottom: 0.2 }}
-                                onDragEnd={(_, info) => {
-                                    if (info.offset.y > 100) setIsModalOpen(false);
-                                }}
-                                className="pointer-events-auto relative w-full lg:w-auto lg:min-w-[400px] bg-white lg:card-bg rounded-t-[2rem] lg:rounded-2xl shadow-2xl max-h-[90vh] lg:max-h-[85vh] flex flex-col border-t lg:border border-theme-100"
+                                initial={{ scale: 0.95, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.95, opacity: 0 }}
+                                className="pointer-events-auto relative w-full max-w-sm card-bg rounded-2xl shadow-2xl overflow-hidden border border-theme-100 max-h-[85vh] flex flex-col"
                                 onClick={(e) => e.stopPropagation()}
                             >
-                                {/* Drag Handle (Mobile) */}
-                                <div className="w-full flex justify-center pt-3 pb-1 lg:hidden">
-                                    <div className="w-12 h-1.5 rounded-full bg-gray-200" />
-                                </div>
-
                                 <div className="p-5 overflow-y-auto">
                                     {/* 헤더 */}
                                     <div className="flex items-center justify-between mb-4">

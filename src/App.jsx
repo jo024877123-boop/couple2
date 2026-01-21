@@ -2131,15 +2131,18 @@ const Modal = ({ children, onClose, small = false }) => (
         exit={{ y: "100%", opacity: 0 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
         drag="y"
-        dragConstraints={{ top: 0, bottom: 0 }}
-        dragElastic={{ top: 0, bottom: 0.2 }}
+        dragConstraints={{ top: 0 }}
+        dragSnapToOrigin={true}
         onDragEnd={(_, info) => {
-          if (info.offset.y > 100) onClose();
+          // Velocity check or distance check
+          if (info.offset.y > 150 || info.velocity.y > 500) {
+            onClose();
+          }
         }}
         className={`pointer-events-auto relative w-full ${small ? 'max-w-sm' : 'max-w-lg'} card-bg rounded-t-[2rem] rounded-b-none sm:rounded-[2rem] shadow-2xl p-6 overflow-y-auto max-h-[85vh] sm:max-h-[90vh] pb-safe sm:pb-6`}
       >
         {/* Mobile Handle Bar */}
-        <div className="w-12 h-1.5 bg-gray-300/50 rounded-full mx-auto mb-6 sm:hidden" />
+        <div className="w-12 h-1.5 bg-gray-300/50 rounded-full mx-auto mb-6 sm:hidden cursor-grab active:cursor-grabbing" />
         {children}
       </motion.div>
     </div>
