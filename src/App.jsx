@@ -1972,6 +1972,51 @@ const App = () => {
                   ))}
                 </div>
               </div>
+
+              {/* 데이터 초기화 섹션 */}
+              <div className="border-t border-red-100 pt-6">
+                <h4 className="font-bold text-sm mb-3 text-red-500 flex items-center gap-2">
+                  <Icon name="alert-triangle" size={16} /> 데이터 초기화 (테스트용)
+                </h4>
+                <div className="space-y-2">
+                  <button
+                    onClick={async () => {
+                      if (!confirm('정말 출석체크, 경험치, 업적을 모두 초기화할까요?')) return;
+                      const resetGrowth = {
+                        level: 1,
+                        exp: 0,
+                        lastVisit: '',
+                        totalVisits: 0,
+                        achievements: []
+                      };
+                      await updateCoupleSettings(userData.coupleId, {
+                        growth: resetGrowth,
+                        gameStats: { balanceCount: 0 }
+                      });
+                      setSettings(prev => ({ ...prev, growth: resetGrowth, gameStats: { balanceCount: 0 } }));
+                      alert('✅ 출석/경험치/업적이 초기화되었습니다!');
+                    }}
+                    className="w-full py-3 rounded-xl bg-orange-50 text-orange-600 font-bold hover:bg-orange-100 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Icon name="refresh-cw" size={16} />
+                    출석/경험치/업적 초기화
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!confirm('밸런스 게임 데이터(오늘 답변, 완료 기록)를 초기화할까요?')) return;
+                      await updateCoupleSettings(userData.coupleId, {
+                        balanceGameV2: { todayDate: '', questionId: null, todayAnswers: {}, completedIds: [] }
+                      });
+                      setSettings(prev => ({ ...prev, balanceGameV2: { todayDate: '', questionId: null, todayAnswers: {}, completedIds: [] } }));
+                      alert('✅ 밸런스 게임이 초기화되었습니다!');
+                    }}
+                    className="w-full py-3 rounded-xl bg-purple-50 text-purple-600 font-bold hover:bg-purple-100 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Icon name="scale" size={16} />
+                    밸런스 게임 초기화
+                  </button>
+                </div>
+              </div>
             </div>
           </Modal>
         )}
