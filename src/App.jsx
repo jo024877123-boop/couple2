@@ -223,22 +223,35 @@ const App = () => {
     const today = getLocalISODate();
     let growth = settings.growth ? JSON.parse(JSON.stringify(settings.growth)) : { level: 1, exp: 0, lastVisit: '', totalVisits: 0, achievements: [] };
 
-    if (growth.lastVisit === today) {
-      return;
+    // 1. 개인별 출석 체크 (커플 공용이 아닌, 개인별 기록 확인)
+    const myUid = userData.uid || currentUser.uid;
+    const lastVisitMap = growth.lastVisitByUsers || {}; // { uid: '2024-01-22', ... }
+
+    if (lastVisitMap[myUid] === today) {
+      return; // 이미 오늘 출석함
     }
 
-    // Daily attendance reward
+    // 2. 출석 처리
+    // lastVisit: 화면 표시용(공용)은 가장 최근 방문일로 업데이트
     growth.lastVisit = today;
+
+    // 개인별 기록 업데이트
+    growth.lastVisitByUsers = {
+      ...lastVisitMap,
+      [myUid]: today
+    };
+
     growth.totalVisits = (growth.totalVisits || 0) + 1;
     growth.exp = (growth.exp || 0) + 10;
 
     // Check Achievements 
     const achievements = growth.achievements || [];
     const checkAchieve = (target, id, reward) => {
+      // 업적은 '총 방문 횟수' 기준이므로 유지 (둘이 합쳐서 계산됨 -> 빨리 오름 -> 커플앱 성격에 맞음)
       if (growth.totalVisits >= target && !achievements.includes(id)) {
         achievements.push(id);
         growth.exp += reward;
-        alert(`🏆 업적 달성! "출석 ${target}일" (+${reward} XP)`);
+        alert(`🏆 업적 달성! "출석 누적 ${target}회" (+${reward} XP)`);
       }
     };
 
