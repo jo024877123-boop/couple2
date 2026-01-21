@@ -74,179 +74,189 @@ const LoginView = () => {
     ];
 
     return (
-        <div className="h-[100dvh] w-full flex flex-col lg:flex-row bg-white relative overflow-hidden font-sans">
+        <div className="min-h-[100dvh] w-full flex flex-col lg:flex-row bg-[#0f172a] relative overflow-hidden font-sans selection:bg-indigo-500 selection:text-white">
 
-            {/* 1. Left Side (Mobile: Top Banner) */}
-            <div className="relative w-full lg:w-1/2 h-[40vh] lg:h-full bg-gradient-to-br from-[#6A85B6] to-[#BAC8E0] text-white flex flex-col justify-center lg:justify-between p-8 lg:p-16 shrink-0 z-0">
-                {/* Background Overlay */}
-                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?q=80&w=1974&auto=format&fit=crop')] bg-cover bg-center opacity-30 mix-blend-overlay" />
+            {/* 1. Left Side (Premium Visuals) */}
+            <div className="relative w-full lg:w-7/12 h-[35vh] lg:h-auto overflow-hidden flex flex-col justify-center p-8 lg:p-24 z-0 bg-[#0f172a]">
+                {/* 2026 Trend: Aurora Gradients & Noise */}
+                <div className="absolute top-[-20%] right-[-10%] w-[60vw] h-[60vw] bg-indigo-600 rounded-full mix-blend-screen filter blur-[100px] opacity-30 animate-blob" />
+                <div className="absolute bottom-[-20%] left-[-10%] w-[60vw] h-[60vw] bg-purple-600 rounded-full mix-blend-screen filter blur-[100px] opacity-30 animate-blob animation-delay-2000" />
+                <div className="absolute top-[40%] left-[30%] w-[40vw] h-[40vw] bg-pink-600 rounded-full mix-blend-screen filter blur-[100px] opacity-20 animate-blob animation-delay-4000" />
+                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay pointer-events-none"></div>
 
-                {/* Floating Blobs (Background) */}
-                <div className="absolute top-[-20%] left-[-20%] w-[80%] h-[80%] bg-purple-300/30 rounded-full mix-blend-screen filter blur-3xl animate-blob opacity-60" />
-                <div className="absolute bottom-[-20%] right-[-20%] w-[80%] h-[80%] bg-pink-300/30 rounded-full mix-blend-screen filter blur-3xl animate-blob animation-delay-2000 opacity-60" />
-
-                <div className="relative z-10 flex flex-col h-full justify-center lg:justify-center">
-                    <div className="flex items-center gap-2 mb-4 lg:mb-8 animate-fadeInDown opacity-90">
-                        <span className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] lg:text-xs font-bold uppercase tracking-widest border border-white/10">Our Story</span>
+                <div className="relative z-10 text-white max-w-3xl mt-10 lg:mt-0">
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 text-xs font-bold tracking-widest uppercase text-indigo-200 mb-6 animate-fadeIn transition-transform hover:scale-105 cursor-default">
+                        <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
+                        The Premium Couple App
                     </div>
 
-                    <h1 className="text-3xl lg:text-6xl font-black mb-3 lg:mb-6 leading-tight drop-shadow-sm tracking-tight">
-                        {typedText}<span className="animate-blink font-light text-pink-200">|</span><br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-100 to-indigo-100">
-                            우리들의 이야기
+                    <h1 className="text-4xl lg:text-7xl font-black tracking-tighter mb-6 leading-[1.1] drop-shadow-2xl">
+                        <span className="bg-gradient-to-r from-white via-indigo-100 to-indigo-200 bg-clip-text text-transparent">
+                            {typedText}
+                        </span>
+                        <span className="text-indigo-400 animate-pulse ml-1">_</span>
+                        <br />
+                        <span className="block text-2xl lg:text-5xl opacity-60 font-medium tracking-tight mt-2 lg:mt-4 text-slate-300">
+                            우리만의 특별한 우주
                         </span>
                     </h1>
 
-                    <p className="text-sm lg:text-lg text-white/80 font-medium max-w-md leading-relaxed animate-fadeIn break-keep hidden lg:block" style={{ animationDelay: '0.5s' }}>
-                        서로의 일상을 공유하고, 소중한 추억을 기록하세요.<br />
-                        가장 로맨틱한 우리만의 공간입니다.
+                    <p className="hidden lg:block text-lg text-slate-400 font-medium leading-relaxed max-w-lg animate-fadeInUp" style={{ animationDelay: '0.3s' }}>
+                        가장 소중한 순간을 기록하고 공유하세요.<br />
+                        단둘이서 만들어가는 <span className="text-white font-bold decoration-indigo-500 underline underline-offset-4">Our Story</span>의 시작.
                     </p>
-                </div>
 
-                {/* Desktop Features Grid */}
-                <div className="hidden lg:grid relative z-10 grid-cols-3 gap-4 animate-fadeInUp mt-auto" style={{ animationDelay: '1s' }}>
-                    {features.map((f, i) => (
-                        <div key={i} className="bg-white/10 backdrop-blur-sm border border-white/10 p-4 rounded-2xl hover:bg-white/15 transition-all">
-                            <Icon name={f.icon} size={24} className="mb-2 text-pink-100" />
-                            <h3 className="font-bold text-sm mb-0.5">{f.title}</h3>
-                            <p className="text-[10px] text-white/60">{f.desc}</p>
-                        </div>
-                    ))}
+                    {/* Features Grid (Desktop Only) */}
+                    <div className="hidden lg:grid grid-cols-3 gap-4 mt-16 animate-fadeInUp" style={{ animationDelay: '0.6s' }}>
+                        {features.map((f, i) => (
+                            <div key={i} className="group p-5 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-sm hover:bg-white/10 transition-all duration-300 hover:-translate-y-1">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center text-indigo-300 mb-3 group-hover:scale-110 transition-transform">
+                                    <Icon name={f.icon} size={20} />
+                                </div>
+                                <h3 className="font-bold text-white text-sm mb-1">{f.title}</h3>
+                                <p className="text-xs text-slate-400 leading-relaxed">{f.desc}</p>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
 
-            {/* 2. Right Side (Mobile: Bottom Sheet) */}
-            <div className="relative w-full lg:w-1/2 h-[60vh] lg:h-full bg-white flex flex-col z-10 -mt-10 lg:mt-0 rounded-t-[2.5rem] lg:rounded-none shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.1)] lg:shadow-none overflow-hidden">
-                <div className="flex-1 overflow-y-auto px-8 py-10 lg:p-20 flex flex-col justify-center">
-                    <div className="max-w-sm mx-auto w-full">
+            {/* 2. Right Side (Modern Form) */}
+            <div className="relative w-full lg:w-5/12 min-h-[65vh] lg:h-auto bg-white flex flex-col items-center justify-center p-6 lg:p-12 z-10 rounded-t-[2.5rem] lg:rounded-none lg:rounded-l-[3.5rem] shadow-2xl overflow-y-auto">
+                <div className="w-full max-w-[400px] animate-fadeIn">
 
-                        {/* Status Message */}
-                        {(error || success) && (
-                            <div className={`mb-6 p-4 rounded-2xl text-sm font-bold text-center animate-shake flex items-center justify-center gap-2 shadow-sm ${error ? 'bg-red-50 text-red-500 border border-red-100' : 'bg-green-50 text-green-600 border border-green-100'}`}>
-                                <Icon name={error ? "alert-circle" : "check-circle"} size={18} />
-                                {error || success}
+                    {/* Feedback Toast */}
+                    {(error || success) && (
+                        <div className={`mb-6 p-4 rounded-2xl text-sm font-bold text-center animate-shake flex items-center justify-center gap-3 shadow-lg backdrop-blur-md ${error ? 'bg-red-50/90 text-red-500 ring-1 ring-red-100' : 'bg-green-50/90 text-green-600 ring-1 ring-green-100'}`}>
+                            <Icon name={error ? "alert-circle" : "check-circle"} size={20} />
+                            <span>{error || success}</span>
+                        </div>
+                    )}
+
+                    {mode === 'login' && (
+                        <div className="space-y-8">
+                            <div className="text-center lg:text-left">
+                                <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Welcome Back!</h2>
+                                <p className="text-slate-500 font-medium">오늘도 서로의 이야기를 들려주세요.</p>
                             </div>
-                        )}
 
-                        {mode === 'login' && (
-                            <div className="animate-fadeInRight space-y-8">
-                                <div className="text-center lg:text-left">
-                                    <h2 className="text-2xl lg:text-3xl font-black text-gray-900 mb-2 tracking-tight">반가워요! 👋</h2>
-                                    <p className="text-gray-400 text-sm lg:text-base">오늘 하루는 어땠나요? 함께 이야기해요.</p>
-                                </div>
-
-                                <form onSubmit={handleLogin} className="space-y-5">
-                                    <div className="space-y-4">
-                                        <div className="relative">
-                                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
-                                                <Icon name="mail" size={18} />
-                                            </div>
-                                            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
-                                                className="w-full bg-gray-50 border border-gray-100 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 rounded-2xl py-4 pl-11 pr-4 outline-none transition-all font-medium text-gray-800 placeholder:text-gray-400"
-                                                placeholder="이메일 주소" />
+                            <form onSubmit={handleLogin} className="space-y-5">
+                                <div className="space-y-4">
+                                    <div className="group relative transition-all">
+                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+                                            <Icon name="mail" size={20} />
                                         </div>
-                                        <div className="relative">
-                                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
-                                                <Icon name="lock" size={18} />
-                                            </div>
-                                            <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
-                                                className="w-full bg-gray-50 border border-gray-100 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 rounded-2xl py-4 pl-11 pr-4 outline-none transition-all font-medium text-gray-800 placeholder:text-gray-400"
-                                                placeholder="비밀번호" />
-                                            <button type="button" onClick={() => setMode('forgot-password')} className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-indigo-500 hover:text-indigo-600 p-1">
-                                                찾기
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <button type="submit" disabled={loading}
-                                        className="w-full py-4 rounded-2xl bg-gray-900 text-white font-bold text-lg hover:bg-black hover:scale-[1.01] active:scale-[0.98] transition-all shadow-xl disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                                        {loading ? <Icon name="loader" className="animate-spin" /> : '로그인'}
-                                    </button>
-                                </form>
-
-                                <div className="pt-2">
-                                    <div className="relative flex py-2 items-center mb-6">
-                                        <div className="flex-grow border-t border-gray-100"></div>
-                                        <span className="flex-shrink-0 mx-4 text-gray-300 text-xs font-bold uppercase tracking-wider">간편 로그인</span>
-                                        <div className="flex-grow border-t border-gray-100"></div>
-                                    </div>
-
-                                    <button onClick={handleGoogleLogin} disabled={loading}
-                                        className="w-full py-3.5 rounded-2xl border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all font-bold text-gray-600 flex items-center justify-center gap-2.5">
-                                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" className="w-5 h-5" />
-                                        <span>Google로 계속하기</span>
-                                    </button>
-
-                                    <p className="text-center mt-8 text-sm text-gray-400">
-                                        아직 계정이 없으신가요?
-                                        <button onClick={() => { resetForm(); setMode('signup'); }} className="ml-1.5 text-indigo-600 font-bold hover:underline transition-colors">
-                                            회원가입
-                                        </button>
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-
-                        {mode === 'signup' && (
-                            <div className="animate-fadeInRight space-y-6">
-                                <div>
-                                    <button onClick={() => { resetForm(); setMode('login'); }} className="mb-6 text-gray-400 hover:text-gray-600 flex items-center gap-1">
-                                        <Icon name="arrow-left" size={18} /> 이전
-                                    </button>
-                                    <h2 className="text-2xl lg:text-3xl font-black text-gray-900 mb-2">회원가입</h2>
-                                    <p className="text-gray-400 text-sm">30초면 충분해요.</p>
-                                </div>
-
-                                <form onSubmit={handleSignup} className="space-y-4">
-                                    <div className="space-y-3">
-                                        <input type="text" value={name} onChange={e => setName(e.target.value)} required
-                                            className="w-full bg-gray-50 border border-gray-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-2xl px-5 py-3.5 outline-none font-medium placeholder:text-gray-400"
-                                            placeholder="이름 (닉네임)" />
                                         <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
-                                            className="w-full bg-gray-50 border border-gray-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-2xl px-5 py-3.5 outline-none font-medium placeholder:text-gray-400"
+                                            className="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-2xl py-4 pl-12 pr-4 outline-none transition-all font-semibold text-slate-700 placeholder:text-slate-400"
                                             placeholder="이메일" />
-                                        <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
-                                            className="w-full bg-gray-50 border border-gray-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-2xl px-5 py-3.5 outline-none font-medium placeholder:text-gray-400"
-                                            placeholder="비밀번호 (6자리 이상)" />
-                                        <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required
-                                            className="w-full bg-gray-50 border border-gray-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-2xl px-5 py-3.5 outline-none font-medium placeholder:text-gray-400"
-                                            placeholder="비밀번호 확인" />
                                     </div>
+                                    <div className="group relative transition-all">
+                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+                                            <Icon name="lock" size={20} />
+                                        </div>
+                                        <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
+                                            className="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-2xl py-4 pl-12 pr-4 outline-none transition-all font-semibold text-slate-700 placeholder:text-slate-400"
+                                            placeholder="비밀번호" />
+                                        <button type="button" onClick={() => setMode('forgot-password')} className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-indigo-500 hover:text-indigo-700 transition-colors px-2 py-1 rounded-md hover:bg-indigo-50">
+                                            분실하셨나요?
+                                        </button>
+                                    </div>
+                                </div>
 
-                                    <button type="submit" disabled={loading}
-                                        className="w-full py-4 mt-2 rounded-2xl bg-indigo-600 text-white font-bold text-lg shadow-lg hover:bg-indigo-700 hover:scale-[1.01] active:scale-[0.98] transition-all">
-                                        {loading ? <Icon name="loader" className="animate-spin" /> : '가입 완료 🎉'}
+                                <button type="submit" disabled={loading}
+                                    className="w-full py-4 rounded-xl relative overflow-hidden bg-slate-900 text-white font-bold text-lg hover:shadow-lg hover:shadow-indigo-500/25 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed group">
+                                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                    <span className="relative flex items-center justify-center gap-2">
+                                        {loading ? <Icon name="loader" className="animate-spin" /> : '로그인'}
+                                        {!loading && <Icon name="arrow-right" size={18} className="group-hover:translate-x-1 transition-transform" />}
+                                    </span>
+                                </button>
+                            </form>
+
+                            <div className="pt-2">
+                                <div className="relative flex py-2 items-center mb-6">
+                                    <div className="flex-grow border-t border-slate-100"></div>
+                                    <span className="flex-shrink-0 mx-4 text-slate-400 text-xs font-bold uppercase tracking-widest">Social Login</span>
+                                    <div className="flex-grow border-t border-slate-100"></div>
+                                </div>
+
+                                <button onClick={handleGoogleLogin} disabled={loading}
+                                    className="w-full py-4 rounded-xl border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all font-bold text-slate-600 flex items-center justify-center gap-3 relative overflow-hidden active:scale-[0.98]">
+                                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" className="w-5 h-5" />
+                                    <span>Google 계정으로 시작</span>
+                                </button>
+
+                                <div className="text-center mt-10">
+                                    <p className="text-sm text-slate-400 mb-2">아직 계정이 없으신가요?</p>
+                                    <button onClick={() => { resetForm(); setMode('signup'); }} className="text-indigo-600 font-black text-sm hover:text-indigo-800 transition-colors hover:underline underline-offset-4 decoration-2">
+                                        무료로 회원가입하기
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Signup Mode */}
+                    {mode === 'signup' && (
+                        <div className="space-y-6 animate-fadeInRight">
+                            <div>
+                                <button onClick={() => { resetForm(); setMode('login'); }} className="mb-8 text-slate-400 hover:text-slate-600 flex items-center gap-2 text-sm font-bold transition-colors group">
+                                    <Icon name="arrow-left" size={16} className="group-hover:-translate-x-1 transition-transform" /> 로그인으로 돌아가기
+                                </button>
+                                <h2 className="text-3xl font-black text-slate-900 tracking-tight">회원가입</h2>
+                                <p className="text-slate-500 font-medium mt-1">30초 만에 커플 공간을 만들어보세요.</p>
+                            </div>
+
+                            <form onSubmit={handleSignup} className="space-y-4">
+                                <div className="space-y-3">
+                                    <input type="text" value={name} onChange={e => setName(e.target.value)} required
+                                        className="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-2xl px-5 py-4 outline-none font-semibold placeholder:text-slate-400 transition-all"
+                                        placeholder="이름 (닉네임)" />
+                                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
+                                        className="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-2xl px-5 py-4 outline-none font-semibold placeholder:text-slate-400 transition-all"
+                                        placeholder="이메일" />
+                                    <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
+                                        className="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-2xl px-5 py-4 outline-none font-semibold placeholder:text-slate-400 transition-all"
+                                        placeholder="비밀번호 (6자리 이상)" />
+                                    <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required
+                                        className="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-2xl px-5 py-4 outline-none font-semibold placeholder:text-slate-400 transition-all"
+                                        placeholder="비밀번호 확인" />
+                                </div>
+
+                                <button type="submit" disabled={loading}
+                                    className="w-full py-4 mt-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-lg shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 hover:scale-[1.01] active:scale-[0.98] transition-all">
+                                    {loading ? <Icon name="loader" className="animate-spin" /> : '가입 완료하고 시작하기 ✨'}
+                                </button>
+                            </form>
+                        </div>
+                    )}
+
+                    {/* Forgot Password Mode */}
+                    {(mode === 'forgot-password' || mode === 'verify-sent') && (
+                        <div className="animate-fadeInRight text-center py-4">
+                            <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-sm rotate-3 hover:rotate-6 transition-transform">
+                                <Icon name={mode === 'verify-sent' ? 'mail-check' : 'key'} size={32} />
+                            </div>
+                            <h2 className="text-2xl font-bold mb-3 text-slate-900">{mode === 'verify-sent' ? '메일함 확인' : '비밀번호 찾기'}</h2>
+                            <p className="text-sm text-slate-500 mb-8 max-w-[240px] mx-auto leading-relaxed">
+                                {mode === 'verify-sent' ? `${email}로 재설정 링크를 보냈어요. 스팸함도 확인해주세요!` : '가입하신 이메일을 입력하시면\n재설정 링크를 보내드립니다.'}
+                            </p>
+
+                            {mode === 'forgot-password' && (
+                                <form onSubmit={handleResetPassword} className="space-y-4">
+                                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
+                                        className="w-full bg-slate-50 border border-slate-200 focus:border-indigo-500 rounded-2xl px-5 py-4 outline-none font-semibold text-center placeholder:text-slate-400 transition-all"
+                                        placeholder="name@example.com" />
+                                    <button type="submit" disabled={loading} className="w-full py-4 rounded-xl bg-slate-900 text-white font-bold hover:bg-black transition-all shadow-lg">
+                                        재설정 링크 보내기
                                     </button>
                                 </form>
-                            </div>
-                        )}
-
-                        {(mode === 'forgot-password' || mode === 'verify-sent') && (
-                            <div className="animate-fadeInRight text-center py-4">
-                                <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                                    <Icon name={mode === 'verify-sent' ? 'mail-check' : 'key'} size={28} />
-                                </div>
-                                <h2 className="text-xl font-bold mb-2 text-gray-900">{mode === 'verify-sent' ? '메일함 확인' : '비밀번호 찾기'}</h2>
-                                <p className="text-sm text-gray-500 mb-8 max-w-[200px] mx-auto leading-relaxed">
-                                    {mode === 'verify-sent' ? `${email}로 링크를 보냈어요.` : '가입하신 이메일을 입력하세요.'}
-                                </p>
-
-                                {mode === 'forgot-password' && (
-                                    <form onSubmit={handleResetPassword} className="space-y-4">
-                                        <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
-                                            className="w-full bg-gray-50 border border-gray-100 focus:border-indigo-500 rounded-2xl px-5 py-3.5 outline-none font-medium text-center"
-                                            placeholder="name@example.com" />
-                                        <button type="submit" disabled={loading} className="w-full py-4 rounded-2xl bg-indigo-600 text-white font-bold shadow-lg hover:bg-indigo-700 transition-all">
-                                            링크 보내기
-                                        </button>
-                                    </form>
-                                )}
-                                <button onClick={() => { resetForm(); setMode('login'); }} className="mt-8 text-gray-400 text-sm font-bold hover:text-gray-600">
-                                    로그인으로 돌아가기
-                                </button>
-                            </div>
-                        )}
-                    </div>
+                            )}
+                            <button onClick={() => { resetForm(); setMode('login'); }} className="mt-8 text-slate-400 text-sm font-bold hover:text-slate-600 transition-colors">
+                                로그인으로 돌아가기
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -261,8 +271,7 @@ const LoginView = () => {
                     animation: blob 10s infinite;
                 }
                 .animation-delay-2000 { animation-delay: 2s; }
-                .animate-blink { animation: blink 1s step-end infinite; }
-                @keyframes blink { 50% { opacity: 0; } }
+                .animation-delay-4000 { animation-delay: 4s; }
             `}</style>
         </div>
     );
