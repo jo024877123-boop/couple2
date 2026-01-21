@@ -34,7 +34,7 @@ import {
   subscribeChecklistGroups, addChecklistGroup, deleteChecklistGroup,
   getCoupleUsers, updateUserProfile, uploadProfilePhoto,
   subscribeAnniversaries, addAnniversary, updateAnniversary, deleteAnniversary,
-  subscribeBalanceHistory, addBalanceHistory
+  subscribeBalanceHistory, addBalanceHistory, resetAllCoupleData
 } from './services/db';
 // Cat Theme Click Interaction
 const useCatEffect = (theme) => {
@@ -2003,17 +2003,28 @@ const App = () => {
                   </button>
                   <button
                     onClick={async () => {
-                      if (!confirm('밸런스 게임 데이터(오늘 답변, 완료 기록)를 초기화할까요?')) return;
-                      await updateCoupleSettings(userData.coupleId, {
-                        balanceGameV2: { todayDate: '', questionId: null, todayAnswers: {}, completedIds: [] }
-                      });
-                      setSettings(prev => ({ ...prev, balanceGameV2: { todayDate: '', questionId: null, todayAnswers: {}, completedIds: [] } }));
-                      alert('✅ 밸런스 게임이 초기화되었습니다!');
+                      if (!confirm('⛔️ 경고: 모든 데이터가 완전히 삭제됩니다!\n\n게시글, 체크리스트, 기념일, 밸런스 게임 기록 등 모든 데이터가 사라집니다.\n정말 초기화하시겠습니까?')) return;
+
+                      const verify = prompt('초기화를 진행하려면 "초기화"라고 입력해주세요.');
+                      if (verify !== '초기화') {
+                        alert('입력이 올바르지 않아 취소되었습니다.');
+                        return;
+                      }
+
+                      alert('데이터 초기화를 시작합니다... 잠시 멈출 수 있습니다.');
+                      try {
+                        await resetAllCoupleData(userData.coupleId);
+                        alert('✅ 모든 데이터가 초기화되었습니다. 새로고침합니다.');
+                        window.location.reload();
+                      } catch (e) {
+                        console.error(e);
+                        alert('초기화 중 오류가 발생했습니다: ' + e.message);
+                      }
                     }}
-                    className="w-full py-3 rounded-xl bg-purple-50 text-purple-600 font-bold hover:bg-purple-100 transition-all flex items-center justify-center gap-2"
+                    className="w-full py-3 rounded-xl bg-red-50 text-red-600 font-bold hover:bg-red-100 transition-all flex items-center justify-center gap-2 mt-2 border-2 border-red-200"
                   >
-                    <Icon name="scale" size={16} />
-                    밸런스 게임 초기화
+                    <Icon name="trash-2" size={16} />
+                    데이터 완전 초기화 (주의!)
                   </button>
                 </div>
               </div>

@@ -220,3 +220,29 @@ export const addBalanceHistory = async (coupleId, record) => {
         completedAt: serverTimestamp()
     });
 };
+
+/* --- Dangerous Reset --- */
+export const resetAllCoupleData = async (coupleId) => {
+    // 1. Delete all sub-collections
+    const collections = ['posts', 'checklist', 'bucketlist', 'checklist_groups', 'anniversaries', 'balance_history'];
+
+    for (const colName of collections) {
+        const q = query(collection(db, `couples/${coupleId}/${colName}`));
+        const snapshot = await getDocs(q);
+        const batch = []; // Batch delete implementation manually or via separate calls
+
+        // Firestore batch limit is 500, but simple promise.all is safer for small datasets here
+        const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
+        await Promise.all(deletePromises);
+    }
+
+    // 2. Reset Couple Settings (Growth, Game, etc.)
+    const docRef = doc(db, 'couples', coupleId);
+    await updateDoc(docRef, {
+        growth: { level: 1, exp: 0, lastVisit: '', totalVisits: 0, achievements: [] },
+        gameStats: { balanceCount: 0 },
+        balanceGameV2: { todayDate: '', questionId: null, todayAnswers: {}, completedIds: [] },
+        customTabs: { feed: 'Timeline', gallery: 'Gallery', checklist: 'Checklist', bucket: 'Bucket List', calendar: 'Anniversary' },
+        updatedAt: serverTimestamp()
+    });
+};
