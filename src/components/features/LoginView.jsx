@@ -74,49 +74,50 @@ const LoginView = () => {
     ];
 
     return (
-        <div className="min-h-[100dvh] w-full flex flex-col lg:flex-row bg-[#f8fafc] relative overflow-hidden font-sans selection:bg-pink-200 selection:text-pink-900">
+        <div className="min-h-[100dvh] w-full flex flex-col lg:flex-row bg-[#f0f9ff] relative overflow-hidden font-sans selection:bg-sky-200 selection:text-sky-900">
 
             {/* 1. Left Side (Emotional Visuals) */}
-            <div className="relative w-full lg:w-7/12 h-[38vh] lg:h-auto overflow-hidden flex flex-col justify-center p-8 lg:p-24 z-0 bg-gradient-to-br from-indigo-50 via-white to-pink-50">
+            <div className="relative w-full lg:w-7/12 h-[38vh] lg:h-auto overflow-hidden flex flex-col justify-center p-8 lg:p-24 z-0 bg-gradient-to-br from-sky-200 via-blue-100 to-white">
 
-                {/* 2026 Trend: Cloud/Cotton Candy "Mongle-Mongle" */}
+                {/* 2026 Trend: Sky/Cloud Theme */}
                 <div className="absolute inset-0 z-0 pointer-events-none">
-                    <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] bg-purple-200/40 rounded-full mix-blend-multiply filter blur-[80px] animate-blob" />
-                    <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-pink-200/40 rounded-full mix-blend-multiply filter blur-[80px] animate-blob animation-delay-2000" />
-                    <div className="absolute top-[30%] left-[30%] w-[40vw] h-[40vw] bg-blue-100/40 rounded-full mix-blend-multiply filter blur-[80px] animate-blob animation-delay-4000" />
+                    <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] bg-sky-300/30 rounded-full mix-blend-multiply filter blur-[80px] animate-blob" />
+                    <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-blue-300/30 rounded-full mix-blend-multiply filter blur-[80px] animate-blob animation-delay-2000" />
+                    <div className="absolute top-[30%] left-[30%] w-[40vw] h-[40vw] bg-cyan-200/30 rounded-full mix-blend-multiply filter blur-[80px] animate-blob animation-delay-4000" />
                 </div>
 
-                {/* Hand Heart Texture Overlay */}
-                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?q=80&w=1974&auto=format&fit=crop')] bg-cover bg-center opacity-30 mix-blend-overlay contrast-125 grayscale-[10%]" />
-                <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px]" />
+                {/* Hand Heart Texture Overlay - Increased Visibility */}
+                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?q=80&w=1974&auto=format&fit=crop')] bg-cover bg-center opacity-60 mix-blend-overlay contrast-110" />
+                {/* Text Protection Gradient */}
+                <div className="absolute inset-0 bg-gradient-to-r from-sky-100/80 via-white/40 to-transparent backdrop-blur-[1px]" />
 
                 <div className="relative z-10 max-w-2xl mt-8 lg:mt-0">
-                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/60 backdrop-blur-md border border-white/50 text-xs font-bold tracking-widest uppercase text-indigo-900 mb-6 shadow-sm animate-fadeIn hover:scale-105 transition-transform cursor-default select-none">
-                        <span className="w-2 h-2 rounded-full bg-pink-400 animate-pulse"></span>
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/60 backdrop-blur-md border border-white/50 text-xs font-bold tracking-widest uppercase text-sky-900 mb-6 shadow-sm animate-fadeIn hover:scale-105 transition-transform cursor-default select-none">
+                        <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span>
                         Our Special Space
                     </div>
 
                     <h1 className="text-4xl lg:text-7xl font-black tracking-tighter mb-6 leading-[1.15] text-slate-800 drop-shadow-sm">
-                        <span className="bg-gradient-to-r from-slate-800 via-indigo-900 to-slate-800 bg-clip-text text-transparent">
+                        <span className="bg-gradient-to-r from-sky-600 to-blue-600 bg-clip-text text-transparent">
                             {typedText}
                         </span>
-                        <span className="text-pink-400 animate-pulse ml-1">_</span>
+                        <span className="text-sky-400 animate-pulse ml-1">_</span>
                         <br />
-                        <span className="block text-2xl lg:text-5xl opacity-70 font-medium tracking-tight mt-2 lg:mt-4 text-slate-600">
-                            우리만의 따뜻한 기록
+                        <span className="block text-2xl lg:text-5xl opacity-80 font-medium tracking-tight mt-2 lg:mt-4 text-slate-600">
+                            우리만의 푸른 하늘
                         </span>
                     </h1>
 
                     <p className="hidden lg:block text-lg text-slate-600 font-medium leading-relaxed max-w-lg animate-fadeInUp" style={{ animationDelay: '0.3s' }}>
-                        서로의 하루를 다정하게 나누고,<br />
-                        가장 설레는 순간을 영원히 간직하세요.
+                        맑은 하늘처럼 투명하게 서로를 나누고,<br />
+                        가장 설레는 순간을 구름 위에 기록하세요.
                     </p>
 
-                    {/* Features Grid (Light Theme) */}
+                    {/* Features Grid (Sky Theme) */}
                     <div className="hidden lg:grid grid-cols-3 gap-4 mt-16 animate-fadeInUp" style={{ animationDelay: '0.6s' }}>
                         {features.map((f, i) => (
                             <div key={i} className="group p-5 rounded-2xl bg-white/40 border border-white/60 backdrop-blur-sm shadow-sm hover:bg-white/70 hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-default">
-                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-100 to-pink-100 flex items-center justify-center text-indigo-500 mb-3 group-hover:scale-110 transition-transform shadow-inner">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-100 to-blue-100 flex items-center justify-center text-sky-600 mb-3 group-hover:scale-110 transition-transform shadow-inner">
                                     <Icon name={f.icon} size={20} />
                                 </div>
                                 <h3 className="font-bold text-slate-800 text-sm mb-1">{f.title}</h3>
