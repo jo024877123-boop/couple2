@@ -83,22 +83,26 @@ const BalanceHistoryView = ({ history = [], coupleUsers = [], onClose }) => {
                             </div>
 
                             {/* 각자의 선택 */}
-                            <div className="space-y-2">
+                            <div className="space-y-3">
                                 {answerEntries.map(([uid, answer]) => (
-                                    <div key={uid} className="flex items-start gap-2 p-2 bg-white/60 rounded-xl border border-gray-100">
-                                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ${answer.option === 'A' ? 'bg-purple-100 text-purple-600' : 'bg-pink-100 text-pink-600'}`}>
-                                            {answer.name || '익명'}
-                                        </span>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-xs text-gray-600 font-medium">
-                                                {answer.option === 'A' ? record.optionA : record.optionB}
-                                            </p>
-                                            {answer.comment && (
-                                                <p className="text-xs text-gray-500 mt-1 italic">
-                                                    "{answer.comment}"
-                                                </p>
-                                            )}
+                                    <div key={uid} className="flex flex-col gap-1 p-3 bg-white/80 rounded-xl border border-gray-100 shadow-sm">
+                                        <div className="flex items-center gap-2">
+                                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${answer.option === 'A' ? 'bg-purple-100 text-purple-600' : 'bg-pink-100 text-pink-600'}`}>
+                                                {answer.name || '익명'}
+                                            </span>
+                                            <span className="text-xs font-bold text-gray-700">
+                                                {answer.option === 'A' ? '🅰️' : '🅱️'} {answer.option === 'A' ? record.optionA : record.optionB}
+                                            </span>
                                         </div>
+
+                                        {/* 코멘트 말풍선 스타일 */}
+                                        {answer.comment ? (
+                                            <div className="relative mt-1 ml-1 bg-gray-50 p-2 rounded-lg rounded-tl-none border border-gray-100 text-xs text-gray-600 font-medium">
+                                                "{answer.comment}"
+                                            </div>
+                                        ) : (
+                                            <p className="text-[10px] text-gray-400 pl-1 mt-1">코멘트 없음</p>
+                                        )}
                                     </div>
                                 ))}
                             </div>
