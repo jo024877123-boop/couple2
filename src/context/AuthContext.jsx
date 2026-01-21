@@ -20,31 +20,28 @@ export function useAuth() {
 
 export function AuthProvider({ children }) {
     const [currentUser, setCurrentUser] = useState(null);
-    const [userData, setUserData] = useState(null);
+    const [userData, setUserData] = useState(null); // Firestore user data
+    const [coupleData, setCoupleData] = useState(null); // Firestore couple data
     const [loading, setLoading] = useState(true);
     const [isAdmin, setIsAdmin] = useState(false);
 
     // ========== SIGNUP ==========
     async function signup(email, password, name) {
-        // 1. Create Firebase Auth user
+        // 1. Create Auth
         const res = await createUserWithEmailAndPassword(auth, email, password);
         const user = res.user;
-
-        // 2. Send verification email
         await sendEmailVerification(user);
 
-        // 3. Create user document (not fully registered until email verified)
+        // 2. Create User Doc (No Couple ID yet)
         await setDoc(doc(db, 'users', user.uid), {
             email,
             name,
-            coupleId: null, // Will be set on first login after verification
+            coupleId: null, // 초기에는 커플 연결 없음
             emailVerified: false,
             createdAt: serverTimestamp()
         });
 
-        // 4. Sign out - user must verify email and log in again
         await signOut(auth);
-
         return { message: '인증 메일을 발송했습니다. 이메일을 확인해주세요!' };
     }
 
@@ -53,200 +50,57 @@ export function AuthProvider({ children }) {
         const res = await signInWithEmailAndPassword(auth, email, password);
         const user = res.user;
 
-        // Check email verification
         if (!user.emailVerified) {
             await signOut(auth);
-            throw new Error('이메일 인증이 필요합니다. 메일함을 확인해주세요.');
+            throw new Error('이메일 인증이 필요합니다.');
         }
 
-        // Get user document
-        const userRef = doc(db, 'users', user.uid);
-        const userSnap = await getDoc(userRef);
-
-        if (userSnap.exists()) {
-            const data = userSnap.data();
-
-            // First login after email verification
-            if (!data.coupleId) {
-                // Create new couple for this user
-                // Invite Code is NULL initially. User must generate it manually.
-                const coupleRef = doc(collection(db, 'couples'));
-                await setDoc(coupleRef, {
-                    inviteCode: null, // Changed from auto-generation
-                    user1: user.uid,
-                    user2: null,
-                    coupleName: '우리',
-                    anniversaryDate: new Date().toISOString().split('T')[0],
-                    theme: 'simple',
-                    appTitle: 'Our Story',
-                    appSubtitle: '우리의 이야기',
-                    createdAt: serverTimestamp()
-                });
-
-                // Update user with coupleId
-                await updateDoc(userRef, {
-                    coupleId: coupleRef.id,
-                    emailVerified: true
-                });
-
-                setUserData({ ...data, coupleId: coupleRef.id, emailVerified: true, uid: user.uid });
-            } else {
-                // Mark as verified if not already
-                if (!data.emailVerified) {
-                    await updateDoc(userRef, { emailVerified: true });
-                }
-                setUserData({ ...data, emailVerified: true, uid: user.uid });
-            }
-        }
-
+        // 유저 정보 가져와서 상태 업데이트는 onAuthStateChanged에서 처리됨
         return res;
     }
 
     // ========== GOOGLE LOGIN ==========
     async function loginWithGoogle() {
         try {
-            console.log('🔐 [loginWithGoogle] Starting Google login...');
             const provider = new GoogleAuthProvider();
             const res = await signInWithPopup(auth, provider);
             const user = res.user;
-            console.log('✅ [loginWithGoogle] signInWithPopup success. User:', user.uid);
 
             const userRef = doc(db, 'users', user.uid);
-            let userSnap = await getDoc(userRef);
-            console.log('📄 [loginWithGoogle] User document exists:', userSnap.exists());
+            const userSnap = await getDoc(userRef);
 
             if (!userSnap.exists()) {
-                console.log('🆕 [loginWithGoogle] New user detected. Creating couple and user docs...');
-                // New user - create couple and user doc
-                const coupleRef = doc(collection(db, 'couples'));
-                await setDoc(coupleRef, {
-                    inviteCode: null,
-                    user1: user.uid,
-                    user2: null,
-                    coupleName: '우리',
-                    anniversaryDate: new Date().toISOString().split('T')[0],
-                    theme: 'simple',
-                    appTitle: 'Our Story',
-                    appSubtitle: '우리의 이야기',
-                    createdAt: serverTimestamp()
-                });
-                console.log('✅ [loginWithGoogle] Couple document created:', coupleRef.id);
-
-                const newUserData = {
+                // 신규 구글 유저
+                await setDoc(userRef, {
                     email: user.email,
                     name: user.displayName || '사용자',
-                    coupleId: coupleRef.id,
+                    coupleId: null, // 초기에는 커플 연결 없음
                     emailVerified: true,
                     onboardingCompleted: false,
                     createdAt: serverTimestamp()
-                };
-                await setDoc(userRef, newUserData);
-                console.log('✅ [loginWithGoogle] User document created.');
-
-                // Wait a bit and re-fetch to ensure it's readable
-                await new Promise(resolve => setTimeout(resolve, 500));
-                userSnap = await getDoc(userRef);
-
-                if (userSnap.exists()) {
-                    const finalData = { ...userSnap.data(), uid: user.uid };
-                    console.log('✅ [loginWithGoogle] Document verified. Calling setUserData with:', finalData);
-                    setUserData(finalData);
-                } else {
-                    console.warn('⚠️ [loginWithGoogle] Document still not readable after creation. Setting manually...');
-                    setUserData({ ...newUserData, uid: user.uid });
-                }
-            } else {
-                const existingData = userSnap.data();
-                console.log('👤 [loginWithGoogle] Existing user. Data:', existingData);
-                setUserData({ ...existingData, uid: user.uid });
-                console.log('✅ [loginWithGoogle] setUserData called with:', { ...existingData, uid: user.uid });
+                });
             }
-
-            console.log('🎉 [loginWithGoogle] Login flow completed successfully');
             return res;
         } catch (error) {
-            console.error('❌ [loginWithGoogle] Error:', error);
+            console.error('Google Login Error:', error);
             throw error;
         }
     }
 
-    // ========== COUPLE CONNECTION ==========
-    async function connectWithCode(inviteCode) {
-        if (!currentUser || !userData) throw new Error('로그인이 필요합니다.');
+    // ========== CREATE MY SPACE (초대 코드 생성 시 호출) ==========
+    async function createMyCoupleSpace() {
+        if (!currentUser) return;
 
-        // Trim and validate
-        const code = inviteCode.trim();
-        if (!code || code.length !== 6) {
-            throw new Error('초대 코드는 6자리 숫자입니다.');
-        }
+        // 이미 공간이 있다면 리턴
+        if (userData?.coupleId) return userData.coupleId;
 
-        console.log('Looking for invite code:', code);
+        const coupleRef = doc(collection(db, 'couples'));
+        const newCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-        // Find couple with this invite code
-        const q = query(collection(db, 'couples'), where('inviteCode', '==', code));
-        const snapshot = await getDocs(q);
-
-        console.log('Found couples:', snapshot.size);
-
-        if (snapshot.empty) {
-            throw new Error('유효하지 않은 초대 코드입니다. 코드를 다시 확인해주세요.');
-        }
-
-        const targetCouple = snapshot.docs[0];
-        const targetCoupleData = targetCouple.data();
-
-        if (targetCoupleData.user2) {
-            throw new Error('이미 다른 사람과 연결된 코드입니다.');
-        }
-
-        if (targetCoupleData.user1 === currentUser.uid) {
-            throw new Error('자신의 코드는 사용할 수 없습니다.');
-        }
-
-        // Delete my old couple data
-        // Delete my old couple data (Try-catch to prevent blocking)
-        if (userData.coupleId && userData.coupleId !== targetCouple.id) {
-            try {
-                await deleteCouple(userData.coupleId);
-            } catch (err) {
-                console.warn('Failed to delete old couple data, but proceeding:', err);
-            }
-        }
-
-        // Connect to target couple
-        await updateDoc(doc(db, 'couples', targetCouple.id), {
-            user2: currentUser.uid,
-            inviteCode: null // Remove invite code after connection
-        });
-
-        // Update my user doc
-        await updateDoc(doc(db, 'users', currentUser.uid), {
-            coupleId: targetCouple.id
-        });
-
-        setUserData({ ...userData, coupleId: targetCouple.id });
-    }
-
-    // ========== DISCONNECT ==========
-    async function disconnectCouple() {
-        if (!currentUser || !userData?.coupleId) return;
-
-        const coupleRef = doc(db, 'couples', userData.coupleId);
-        const coupleSnap = await getDoc(coupleRef);
-
-        if (!coupleSnap.exists()) return;
-
-        const coupleData = coupleSnap.data();
-        const isUser1 = coupleData.user1 === currentUser.uid;
-        const partnerId = isUser1 ? coupleData.user2 : coupleData.user1;
-
-        // Create new couple for me
-        // Invite Code is NULL initially
-        const newCoupleRef = doc(collection(db, 'couples'));
-        await setDoc(newCoupleRef, {
-            inviteCode: null,
+        await setDoc(coupleRef, {
+            inviteCode: newCode,
             user1: currentUser.uid,
-            user2: null,
+            user2: null, // 아직 상대방 없음
             coupleName: '우리',
             anniversaryDate: new Date().toISOString().split('T')[0],
             theme: 'simple',
@@ -255,209 +109,182 @@ export function AuthProvider({ children }) {
             createdAt: serverTimestamp()
         });
 
-        // Update my user doc
         await updateDoc(doc(db, 'users', currentUser.uid), {
-            coupleId: newCoupleRef.id
+            coupleId: coupleRef.id
         });
 
-        // If partner exists, give them the old couple (minus me)
-        if (partnerId) {
-            await updateDoc(coupleRef, {
-                [isUser1 ? 'user1' : 'user2']: null,
-                inviteCode: null // Reset invite code for partner too
-            });
-        } else {
-            // No partner, delete old couple and its data
-            await deleteCouple(userData.coupleId);
-        }
-
-        setUserData({ ...userData, coupleId: newCoupleRef.id });
-    }
-
-    // ========== GENERATE INVITE CODE ==========
-    async function generateInviteCode() {
-        if (!userData?.coupleId) return;
-        const newCode = Math.floor(100000 + Math.random() * 900000).toString();
-        // Check duplicate (optional but good practice) - skipped for simplicity assuming collision low
-        await updateDoc(doc(db, 'couples', userData.coupleId), {
-            inviteCode: newCode
-        });
-        // Update local state to reflect change immediately without reload
-        // But since we use real-time listeners in some parts, verify if settings are real-time.
-        // Settings are NOT real-time in App.jsx (getCoupleSettings is one-time).
-        return newCode;
-    }
-
-    // ========== FORCE START NEW COUPLE ==========
-    async function startNewCouple() {
-        if (!currentUser) return;
-
-        // Create brand new couple
-        const coupleRef = doc(collection(db, 'couples'));
-        await setDoc(coupleRef, {
-            inviteCode: null,
+        // 로컬 상태 즉시 업데이트 (SnapShot이 늦을 수 있으므로)
+        setUserData(prev => ({ ...prev, coupleId: coupleRef.id }));
+        setCoupleData({
+            id: coupleRef.id,
+            inviteCode: newCode,
             user1: currentUser.uid,
-            user2: null,
-            coupleName: '우리',
-            anniversaryDate: new Date().toISOString().split('T')[0],
-            theme: 'simple',
-            createdAt: serverTimestamp()
+            user2: null
         });
 
-        // Update user
-        const userRef = doc(db, 'users', currentUser.uid);
-        await updateDoc(userRef, {
-            coupleId: coupleRef.id
-        });
-
-        // Update local state to immediately trigger App re-render
-        setUserData({
-            ...userData,
-            coupleId: coupleRef.id
-        });
+        return { coupleId: coupleRef.id, inviteCode: newCode };
     }
 
-    // ========== DELETE COUPLE DATA ==========
-    async function deleteCouple(coupleId) {
-        // Delete subcollections (posts, checklist, bucketlist)
-        const subcollections = ['posts', 'checklist', 'bucketlist', 'checklist_groups'];
-        for (const sub of subcollections) {
-            const subRef = collection(db, `couples/${coupleId}/${sub}`);
-            const subDocs = await getDocs(subRef);
-            for (const d of subDocs.docs) {
-                await deleteDoc(d.ref);
+    // ========== CONNECT WITH CODE (상대방 코드 입력) ==========
+    async function connectWithCode(inviteCode) {
+        if (!currentUser) throw new Error('로그인이 필요합니다.');
+
+        const code = inviteCode.trim();
+        if (code.length !== 6) throw new Error('6자리 코드를 입력해주세요.');
+
+        // 1. 코드 검색
+        const q = query(collection(db, 'couples'), where('inviteCode', '==', code));
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) throw new Error('유효하지 않은 코드입니다.');
+
+        const targetCoupleDoc = snapshot.docs[0];
+        const targetData = targetCoupleDoc.data();
+
+        // 2. 유효성 검사
+        if (targetData.user2) throw new Error('이미 연결이 완료된 코드입니다.');
+        if (targetData.user1 === currentUser.uid) throw new Error('자신의 코드는 입력할 수 없습니다.');
+
+        // 3. 기존에 내가 만든 "빈 방"이 있다면 삭제 (청소)
+        if (userData?.coupleId) {
+            // 기존 방이 정말 "빈 방(나 혼자 있는)"인지 확인 후 삭제
+            // 만약 user2가 있는 방이라면(이미 커플인데 다른 사람과 연결 시도?) -> 에러 처리 하거나 기존 연결 끊기
+            // 여기서는 간단하게 "나만의 대기방"이면 삭제
+            const myOldRef = doc(db, 'couples', userData.coupleId);
+            const myOldSnap = await getDoc(myOldRef);
+            if (myOldSnap.exists() && !myOldSnap.data().user2) {
+                await deleteDoc(myOldRef);
             }
         }
-        // Delete couple doc
-        await deleteDoc(doc(db, 'couples', coupleId));
+
+        // 4. 연결 실행
+        // 상대방 방에 user2로 들어감 + 코드 만료 처리
+        await updateDoc(targetCoupleDoc.ref, {
+            user2: currentUser.uid,
+            inviteCode: null
+        });
+
+        // 내 정보 업데이트
+        await updateDoc(doc(db, 'users', currentUser.uid), {
+            coupleId: targetCoupleDoc.id
+        });
+
+        // 상태 업데이트
+        setUserData(prev => ({ ...prev, coupleId: targetCoupleDoc.id }));
+        // coupleData는 onSnapshot에 의해 업데이트될 것임
     }
 
-    // ========== LOGOUT ==========
+    // ========== DISCONNECT ==========
+    async function disconnectCouple() {
+        if (!currentUser || !userData?.coupleId) return;
+
+        const coupleId = userData.coupleId;
+        const coupleRef = doc(db, 'couples', coupleId);
+
+        // 1. 내 정보에서 coupleId 제거
+        await updateDoc(doc(db, 'users', currentUser.uid), {
+            coupleId: null
+        });
+
+        // 2. couple 문서 처리
+        // 상대방이 있는지 확인
+        const snap = await getDoc(coupleRef);
+        if (snap.exists()) {
+            const data = snap.data();
+            if (data.user1 === currentUser.uid) {
+                // 내가 방장(user1)이었다면 user1 = null
+                await updateDoc(coupleRef, { user1: null });
+            } else if (data.user2 === currentUser.uid) {
+                // 내가 user2 였다면 user2 = null
+                await updateDoc(coupleRef, { user2: null });
+            }
+
+            // 만약 둘 다 나갔다면 문서 삭제? (선택사항, 데이터 보존 정책에 따라 다름)
+            // 여기서는 "완전 초기화"를 원하셨으므로, 둘 중 한 명이라도 나가면 "깨진 커플"이 됨.
+            // 상대방도 로그인 시 "어? 커플Id는 있는데 user1/user2 중 하나가 없네?" -> 유령 상태 처리 필요
+            // **가장 깔끔한 방법**: 연결 끊으면 그냥 나는 나가고, 남은 사람은 남음.
+            // 남은 사람이 나중에 들어왔을 때 "상대방이 연결을 끊었습니다" 메시지 보고 초기화 하게 유도.
+        }
+
+        setUserData(prev => ({ ...prev, coupleId: null }));
+        setCoupleData(null);
+    }
+
     function logout() {
         setUserData(null);
+        setCoupleData(null);
         setIsAdmin(false);
         return signOut(auth);
     }
 
-    // ========== PASSWORD RESET ==========
-    function resetPassword(email) {
-        return sendPasswordResetEmail(auth, email);
-    }
-
-    // ========== ADMIN ==========
+    function resetPassword(email) { return sendPasswordResetEmail(auth, email); }
     function setAdminMode(status) {
         setIsAdmin(status);
         if (status) {
-            setCurrentUser({ uid: 'admin', email: 'admin@ourstory.com' });
-            setUserData({ name: '관리자', coupleId: null, isAdmin: true });
+            setCurrentUser({ uid: 'admin' });
+            setUserData({ isAdmin: true });
         }
     }
 
-    const [statusMessage, setStatusMessage] = useState('초기화 중...');
-
-    // ========== AUTH STATE OBSERVER ==========
+    // ========== OBSERVER ==========
     useEffect(() => {
-        let timeoutId;
-
-        const loadingRef = { current: true };
-
-        // Timeout failsafe (10 seconds)
-        timeoutId = setTimeout(() => {
-            if (loadingRef.current) {
-                console.error("Auth timeout - forcing loading to false");
-                setLoading(false);
-                setStatusMessage("연결 시간이 너무 오래 걸립니다.");
-            }
-        }, 30000);
-
-        setStatusMessage('인증 상태 확인 중...');
-        const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+        const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
             setCurrentUser(user);
+            setLoading(true);
 
             if (user) {
                 if (!isAdmin) {
-                    setStatusMessage('커플 데이터 연결 중...');
-                    console.log('📡 [AuthContext] Fetching doc(db, "users", "' + user.uid + '")');
+                    // 1. User Data 구독
+                    const unsubUser = onSnapshot(doc(db, 'users', user.uid), (doc) => {
+                        if (doc.exists()) {
+                            const uData = doc.data();
+                            setUserData({ ...uData, uid: user.uid });
 
-                    // Use getDoc for immediate fetch instead of onSnapshot subscription
-                    getDoc(doc(db, 'users', user.uid)).then((docSnap) => {
-                        clearTimeout(timeoutId);
-                        loadingRef.current = false;
-
-                        console.log('🔍 [AuthContext] getDoc result:', {
-                            exists: docSnap.exists(),
-                            data: docSnap.data(),
-                            uid: user.uid
-                        });
-
-                        if (docSnap.exists()) {
-                            const userData = { ...docSnap.data(), uid: user.uid };
-                            setUserData(userData);
-                            setStatusMessage('연결 성공');
-                            console.log('✅ [AuthContext] setUserData called:', userData);
-                        } else {
-                            setStatusMessage('사용자 정보를 찾을 수 없습니다.');
-                            console.warn('⚠️ [AuthContext] Document does not exist for uid:', user.uid);
+                            // 2. Couple Data 구독 (coupleId가 있을 때만)
+                            if (uData.coupleId) {
+                                onSnapshot(doc(db, 'couples', uData.coupleId), (cDoc) => {
+                                    if (cDoc.exists()) {
+                                        setCoupleData({ ...cDoc.data(), id: cDoc.id });
+                                    } else {
+                                        // coupleId는 있는데 문서가 없다? (삭제됨)
+                                        setCoupleData(null);
+                                    }
+                                });
+                            } else {
+                                setCoupleData(null);
+                            }
                         }
                         setLoading(false);
-                    }).catch((error) => {
-                        clearTimeout(timeoutId);
-                        loadingRef.current = false;
-                        console.error("❌ [AuthContext] getDoc error:", error);
-                        setStatusMessage('데이터 로드 오류: ' + error.message);
-                        setLoading(false);
                     });
-                } else {
-                    clearTimeout(timeoutId);
-                    loadingRef.current = false;
-                    setLoading(false);
+                    return () => unsubUser();
                 }
             } else {
-                clearTimeout(timeoutId);
-                loadingRef.current = false;
                 setUserData(null);
+                setCoupleData(null);
                 setLoading(false);
-                setStatusMessage('로그인 대기 중');
             }
         });
-
-        return () => {
-            unsubscribeAuth();
-            clearTimeout(timeoutId);
-        };
+        return () => unsubscribeAuth();
     }, [isAdmin]);
 
+    // **핵심**: 올바르게 연결된 상태인지 판별
+    // coupleData가 존재하고, user1과 user2가 모두 존재해야 함
+    const isCoupleConnected = !!(coupleData && coupleData.user1 && coupleData.user2);
+
     const value = {
-        currentUser,
-        userData,
-        signup,
-        login,
-        loginWithGoogle,
-        resetPassword,
-        connectWithCode,
-        generateInviteCode,
-        startNewCouple,
-        disconnectCouple,
-        logout,
-        isAdmin,
-        setAdminMode,
-        setUserData
+        currentUser, userData, coupleData,
+        loading, isAdmin, isCoupleConnected,
+        signup, login, loginWithGoogle, logout,
+        createMyCoupleSpace, connectWithCode, disconnectCouple,
+        setAdminMode, resetPassword
     };
 
     return (
         <AuthContext.Provider value={value}>
             {loading ? (
-                <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-                    <div style={{ fontSize: '3rem' }}>❤️</div>
-                    <div style={{ fontSize: '1rem', color: '#666' }}>{statusMessage}</div>
-                    <button onClick={() => window.location.reload()} style={{ padding: '0.5rem 1rem', border: '1px solid #ddd', borderRadius: '20px', background: 'white' }}>
-                        새로고침
-                    </button>
-                    {statusMessage.includes('초과') && (
-                        <button onClick={() => signOut(auth).then(() => window.location.reload())} style={{ marginTop: '0.5rem', color: 'red', textDecoration: 'underline', background: 'none', border: 'none' }}>
-                            강제 로그아웃
-                        </button>
-                    )}
+                <div className="flex h-screen items-center justify-center flex-col gap-4">
+                    <div className="animate-spin text-4xl">❤️</div>
+                    <p className="text-gray-500">로딩중...</p>
                 </div>
             ) : children}
         </AuthContext.Provider>

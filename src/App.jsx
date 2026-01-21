@@ -15,6 +15,7 @@ import BottomSheet from './components/ui/BottomSheet';
 import InstallGuide from './components/ui/InstallGuide';
 import LoginView from './components/features/LoginView'; // Login View
 import OnboardingView from './components/features/OnboardingView'; // Onboarding
+import ConnectView from './components/features/ConnectView'; // Connect View
 import AdminDashboard from './components/features/AdminDashboard'; // Admin Dashboard
 import GrowthWidget from './components/features/GrowthWidget'; // Growth Widget
 import AchievementModal from './components/features/AchievementModal'; // Achievement Modal
@@ -95,7 +96,7 @@ const Logo = ({ size = 40, className = "" }) => (
 );
 
 const App = () => {
-  const { currentUser, userData, logout, connectWithCode, generateInviteCode, startNewCouple, disconnectCouple, isAdmin, setUserData } = useAuth();
+  const { currentUser, userData, logout, connectWithCode, generateInviteCode, disconnectCouple, isAdmin, setUserData, isCoupleConnected } = useAuth();
   const [adminViewTarget, setAdminViewTarget] = useState(null); // Couple ID to monitor
 
   // Settings State (Default values with LocalStorage Fallback)
@@ -404,28 +405,23 @@ const App = () => {
 
   const isConnected = !!(settings.user1 && settings.user2) || coupleUsers.length >= 2;
 
+  // Duplicate declarations removed
+
+
+  // ... (Settings State Code Omitted - settings state remains same) ...
+  // This replace is targeted at the logic logic block roughly around line 430
+
   // Login Check
   if (!currentUser) return <LoginView />;
-  if (!userData?.coupleId) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6">
-        <div className="animate-spin text-4xl">⏳</div>
-        <p className="text-gray-500 text-sm">데이터를 불러오고 있습니다...</p>
-        <div className="text-xs text-gray-400 bg-gray-50 p-3 rounded-lg">
-          <p className="font-mono">currentUser: {currentUser ? '✓' : '✗'}</p>
-          <p className="font-mono">userData: {userData ? '✓' : '✗'}</p>
-          <p className="font-mono">coupleId: {userData?.coupleId || '없음'}</p>
-        </div>
-        <button onClick={() => {
-          if (confirm('로그아웃 하시겠습니까?')) logout();
-        }} className="mt-4 px-6 py-2 bg-white border border-gray-300 rounded-full text-sm text-gray-600 shadow-sm hover:bg-gray-50 transition-all">
-          로그아웃 및 재시도
-        </button>
-      </div>
-    );
+
+  // Onboarding Check (Only if connected or explicit bypass needed? Actually Onboarding usually comes AFTER connection)
+  // Let's decide: Connect -> Onboarding -> App
+  // If not connected, show ConnectView
+  if (!isCoupleConnected && !isAdmin && !adminViewTarget) {
+    return <ConnectView />;
   }
 
-  // Onboarding Check
+  // If connected but onboarding not done
   if (!isAdmin && !userData?.onboardingCompleted) {
     return <OnboardingView userData={userData} coupleId={userData.coupleId} userId={currentUser.uid} onComplete={() => setUserData({ ...userData, onboardingCompleted: true })} />;
   }
