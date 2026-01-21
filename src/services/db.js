@@ -201,3 +201,22 @@ export const deleteAnniversary = async (coupleId, anniversaryId) => {
     const docRef = doc(db, `couples/${coupleId}/anniversaries`, anniversaryId);
     await deleteDoc(docRef);
 };
+
+/* --- Balance Game History --- */
+export const subscribeBalanceHistory = (coupleId, callback) => {
+    const q = query(
+        collection(db, `couples/${coupleId}/balance_history`),
+        orderBy('completedAt', 'desc')
+    );
+    return onSnapshot(q, (snapshot) => {
+        const history = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        callback(history);
+    });
+};
+
+export const addBalanceHistory = async (coupleId, record) => {
+    await addDoc(collection(db, `couples/${coupleId}/balance_history`), {
+        ...record,
+        completedAt: serverTimestamp()
+    });
+};

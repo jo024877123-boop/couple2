@@ -22,6 +22,7 @@ import AdminDashboard from './components/features/AdminDashboard'; // Admin Dash
 import GrowthWidget from './components/features/GrowthWidget'; // Growth Widget
 import AchievementModal from './components/features/AchievementModal'; // Achievement Modal
 import BalanceGameCard from './components/features/BalanceGameCard'; // Balance Game
+import BalanceHistoryView from './components/features/BalanceHistoryView'; // Balance History
 import EndingCredits from './components/features/EndingCredits'; // Hidden Ending // Hidden Ending
 import { useDrag } from '@use-gesture/react';
 import { useAuth } from './context/AuthContext'; // Auth Hook
@@ -32,7 +33,8 @@ import {
   subscribeBucketList, addBucketItem, updateBucketItem, deleteBucketItem,
   subscribeChecklistGroups, addChecklistGroup, deleteChecklistGroup,
   getCoupleUsers, updateUserProfile, uploadProfilePhoto,
-  subscribeAnniversaries, addAnniversary, updateAnniversary, deleteAnniversary
+  subscribeAnniversaries, addAnniversary, updateAnniversary, deleteAnniversary,
+  subscribeBalanceHistory, addBalanceHistory
 } from './services/db';
 // Cat Theme Click Interaction
 const useCatEffect = (theme) => {
@@ -135,6 +137,8 @@ const App = () => {
   const [posts, setPosts] = useState([]); // Loaded from DB
   const [isEndingOpen, setIsEndingOpen] = useState(false); // Hidden Ending State
   const [coupleUsers, setCoupleUsers] = useState([]);
+  const [balanceHistory, setBalanceHistory] = useState([]); // Balance Game History
+  const [isBalanceHistoryOpen, setIsBalanceHistoryOpen] = useState(false); // Balance History Modal
 
   const [activeTab, setActiveTabState] = useState('feed');
   const [direction, setDirection] = useState('right');
@@ -334,6 +338,7 @@ const App = () => {
     const unsubChecklist = subscribeChecklist(userData.coupleId, setChecklist);
     const unsubBucket = subscribeBucketList(userData.coupleId, setBucketList);
     const unsubAnniversaries = subscribeAnniversaries(userData.coupleId, setAnniversaries);
+    const unsubBalanceHistory = subscribeBalanceHistory(userData.coupleId, setBalanceHistory);
 
     return () => {
       unsubUsers();
@@ -342,6 +347,7 @@ const App = () => {
       unsubChecklist();
       unsubBucket();
       unsubAnniversaries();
+      unsubBalanceHistory();
     };
   }, [userData?.coupleId]);
 
@@ -865,21 +871,42 @@ const App = () => {
               {/* 오늘의 밸런스 게임 */}
               {/* 오늘의 밸런스 게임 (로딩 완료 시에만 렌더링하여 초기화 방지) */}
               {!loading && (
-                <BalanceGameCard
-                  settings={settings}
-                  gameData={coupleData?.balanceGameV2 || {}} // 서버 실시간 데이터 직접 주입
-                  coupleUsers={coupleUsers}
-                  currentUser={userData}
-                  isConnected={isCoupleConnected}
-                  onRequireConnection={() => {
-                    alert('커플 연동이 필요한 기능입니다! 💕');
-                    setIsSettingsOpen(true);
-                  }}
-                  onUpdateSettings={async (updates) => {
-                    await updateCoupleSettings(userData.coupleId, updates);
-                    setSettings(prev => ({ ...prev, ...updates }));
-                  }}
-                />
+                <>
+                  <BalanceGameCard
+                    settings={settings}
+                    gameData={coupleData?.balanceGameV2 || {}} // 서버 실시간 데이터 직접 주입
+                    coupleUsers={coupleUsers}
+                    currentUser={userData}
+                    isConnected={isCoupleConnected}
+                    onRequireConnection={() => {
+                      alert('커플 연동이 필요한 기능입니다! 💕');
+                      setIsSettingsOpen(true);
+                    }}
+                    onUpdateSettings={async (updates) => {
+                      await updateCoupleSettings(userData.coupleId, updates);
+                      setSettings(prev => ({ ...prev, ...updates }));
+                    }}
+                    onSaveHistory={async (record) => {
+                      await addBalanceHistory(userData.coupleId, record);
+                    }}
+                  />
+                  {/* 밸런스 게임 기록 보기 버튼 */}
+                  {balanceHistory.length > 0 && (
+                    <button
+                      onClick={() => setIsBalanceHistoryOpen(true)}
+                      className="w-full mb-4 py-3 px-4 card-bg rounded-xl border border-theme-100 flex items-center justify-between hover:bg-theme-50 transition-all"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">📚</span>
+                        <div className="text-left">
+                          <p className="text-sm font-bold text-primary">밸런스 게임 기록</p>
+                          <p className="text-xs text-secondary">지난 {balanceHistory.length}개의 게임 결과 보기</p>
+                        </div>
+                      </div>
+                      <Icon name="chevron-right" size={20} className="text-gray-400" />
+                    </button>
+                  )}
+                </>
               )}
               {posts.length === 0 ? (
                 <EmptyState onAdd={() => setIsModalOpen(true)} />
@@ -1832,6 +1859,17 @@ const App = () => {
           <AchievementModal onClose={() => setIsAchievementOpen(false)} growth={settings.growth} />
         )
       }
+
+      {/* 밸런스 게임 기록 모달 */}
+      {isBalanceHistoryOpen && (
+        <Modal onClose={() => setIsBalanceHistoryOpen(false)}>
+          <BalanceHistoryView
+            history={balanceHistory}
+            coupleUsers={coupleUsers}
+            onClose={() => setIsBalanceHistoryOpen(false)}
+          />
+        </Modal>
+      )}
 
       {/* 모바일 햄버거 메뉴 (Drawer) */}
       {

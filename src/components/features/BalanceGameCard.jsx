@@ -3,7 +3,7 @@ import Icon from '../ui/Icon';
 import { BALANCE_QUESTIONS, getTodayQuestion } from '../../constants/balanceGame';
 import { ACHIEVEMENTS } from '../../constants';
 
-const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings, isConnected, onRequireConnection, gameData: serverGameData }) => {
+const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings, isConnected, onRequireConnection, gameData: serverGameData, onSaveHistory }) => {
     const [selectedOption, setSelectedOption] = useState(null);
     const [isInputOpen, setIsInputOpen] = useState(false);
     const [comment, setComment] = useState('');
@@ -222,9 +222,12 @@ const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings,
                 updates.gameStats = newStats;
             }
 
-            // 둘 다 답변했으면 completedIds에 영구 추가
+            // 둘 다 답변했으면 completedIds에 영구 추가 + 히스토리 저장
             const partnerUid = partnerUser?.uid;
-            if (partnerUid && (newAnswers[partnerUid] || partnerAnswerData)) {
+            const partnerHasAnswer = partnerUid && (newAnswers[partnerUid] || partnerAnswerData);
+            const isFirstBothComplete = partnerHasAnswer && !(gameData.completedIds || []).includes(todayQuestion.id);
+
+            if (partnerHasAnswer) {
                 const currentCompleted = gameData.completedIds || [];
                 if (!currentCompleted.includes(todayQuestion.id)) {
                     updates.balanceGameV2.completedIds = [...currentCompleted, todayQuestion.id];
@@ -233,6 +236,27 @@ const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings,
 
             await onUpdateSettings(updates);
             setLocalSubmitted(true);
+
+            // 둘 다 처음 완료했을 때 히스토리에 저장
+            if (isFirstBothComplete && onSaveHistory) {
+                const myAnswer = newAnswers[currentUser.uid];
+                const partnerAnswer = newAnswers[partnerUid] || partnerAnswerData;
+                const myName = coupleUsers.find(u => u.uid === currentUser.uid)?.name || '나';
+                const partnerName = partnerUser?.name || '상대방';
+
+                await onSaveHistory({
+                    questionId: todayQuestion.id,
+                    question: todayQuestion.category,
+                    optionA: todayQuestion.optionA,
+                    optionB: todayQuestion.optionB,
+                    date: today,
+                    answers: {
+                        [currentUser.uid]: { ...myAnswer, name: myName },
+                        [partnerUid]: { ...partnerAnswer, name: partnerName }
+                    },
+                    isMatch: myAnswer.option === partnerAnswer.option
+                });
+            }
 
             // UI 피드백
             // alert(alertMessage); // 너무 잦은 alert 방지, 필요하면 toast로 대체하거나 생략
