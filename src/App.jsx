@@ -1634,7 +1634,7 @@ const App = () => {
 
                     {/* 1. 코드 생성 */}
                     <div className="mb-5">
-                      <p className="text-xs text-gray-500 mb-2 font-medium">상대방에게 공유할 코드를 만드세요</p>
+                      <p className="text-xs text-gray-500 mb-2 font-medium">상대방에게 공유할 코드를 생성합니다.</p>
                       {generatedCode || coupleData?.inviteCode ? (
                         <div className="flex items-center gap-2">
                           <div className="flex-1 bg-white p-3 rounded-xl border border-purple-200 text-center font-black tracking-widest text-lg text-purple-600 shadow-sm">
@@ -1793,17 +1793,35 @@ const App = () => {
               {/* Debug & Troubleshooting */}
               <div className="mt-6 pt-6 border-t border-gray-100 text-center">
                 <p className="text-[10px] text-gray-300 mb-2">Debug Info: {userData?.coupleId?.slice(0, 8)}...</p>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (confirm('⚠️정말 초기화하시겠습니까?\n\n현재 연결된 커플 정보를 버리고, 완전히 새로운 커플 페이지를 생성합니다.\n이 작업은 되돌릴 수 없습니다.')) {
-                      await startNewCouple();
-                    }
-                  }}
-                  className="text-xs text-gray-400 underline hover:text-red-500 transition-colors"
-                >
-                  데이터 초기화 및 새 커플 시작 (오류 해결용)
-                </button>
+                <div className="flex items-center justify-center gap-4">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (confirm('💪 성장 정보(XP, 레벨, 업적)만 초기화하시겠습니까?\n\n게시글이나 사진 등은 유지됩니다.\n이 작업은 되돌릴 수 없습니다.')) {
+                        try {
+                          const resetGrowth = { level: 1, exp: 0, achievements: [] };
+                          await updateCoupleSettings(userData.coupleId, { growth: resetGrowth });
+                          setSettings(prev => ({ ...prev, growth: resetGrowth }));
+                          alert('성장 정보가 초기화되었습니다. 다시 1레벨부터 시작하세요! 🌱');
+                        } catch (e) { alert("초기화 실패: " + e.message); }
+                      }
+                    }}
+                    className="text-xs text-gray-400 underline hover:text-green-500 transition-colors"
+                  >
+                    성장 정보 초기화
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (confirm('⚠️정말 초기화하시겠습니까?\n\n현재 연결된 커플 정보를 버리고, 완전히 새로운 커플 페이지를 생성합니다.\n이 작업은 되돌릴 수 없습니다.')) {
+                        await startNewCouple();
+                      }
+                    }}
+                    className="text-xs text-gray-400 underline hover:text-red-500 transition-colors"
+                  >
+                    데이터 완전 초기화 (새 커플)
+                  </button>
+                </div>
               </div>
             </form>
           </BottomSheet>

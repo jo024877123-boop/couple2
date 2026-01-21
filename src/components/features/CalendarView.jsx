@@ -635,7 +635,15 @@ const CalendarView = ({
                                 {getPostsForDate(selectedDate).map(post => (
                                     <div key={post.id} className="p-3 rounded-lg flex items-center gap-3" style={{ backgroundColor: getPostColor(post.id) + '20', borderLeft: `3px solid ${getPostColor(post.id)}` }}>
                                         <button onClick={() => { onSelectPost(post); setIsModalOpen(false); }} className="flex items-center gap-3 flex-1 min-w-0 text-left">
-                                            {post.media[0] && <img src={post.media[0].url} className="w-10 h-10 rounded-lg object-cover" alt="" />}
+                                            {post.media[0] && (
+                                                post.media[0].type === 'video' ? (
+                                                    <div className="w-10 h-10 rounded-lg bg-black/10 flex items-center justify-center shrink-0">
+                                                        <Icon name="video" size={20} className="text-primary" />
+                                                    </div>
+                                                ) : (
+                                                    <img src={post.media[0].url} className="w-10 h-10 rounded-lg object-cover shrink-0" alt="" />
+                                                )
+                                            )}
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-sm text-primary truncate">{post.content}</p>
                                             </div>
