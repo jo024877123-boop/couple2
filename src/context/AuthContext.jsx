@@ -91,8 +91,14 @@ export function AuthProvider({ children }) {
     async function createMyCoupleSpace() {
         if (!currentUser) return;
 
-        // 이미 공간이 있다면 리턴
-        if (userData?.coupleId) return userData.coupleId;
+        // 이미 공간이 있다면 기존 정보 반환
+        if (userData?.coupleId) {
+            const snap = await getDoc(doc(db, 'couples', userData.coupleId));
+            if (snap.exists()) {
+                const data = snap.data();
+                return { coupleId: userData.coupleId, inviteCode: data.inviteCode };
+            }
+        }
 
         const coupleRef = doc(collection(db, 'couples'));
         const newCode = Math.floor(100000 + Math.random() * 900000).toString();

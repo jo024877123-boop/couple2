@@ -487,9 +487,10 @@ const App = () => {
     e.preventDefault();
 
     // 1. Check Connection
-    if (!isConnected) {
-      alert("⚠️ 커플 연결이 필요합니다.\n상대방과 연결하여 추억을 기록해보세요!");
-      setIsConnectModalOpen(true);
+    // 1. Check Connection
+    if (!isCoupleConnected) {
+      alert("⚠️ 커플 연결이 필요합니다.\n설정 페이지에서 코드를 생성하여 연결해주세요!");
+      setIsSettingsOpen(true);
       return;
     }
 
@@ -863,8 +864,11 @@ const App = () => {
                   gameData={coupleData?.balanceGameV2 || {}} // 서버 실시간 데이터 직접 주입
                   coupleUsers={coupleUsers}
                   currentUser={userData}
-                  isConnected={isConnected}
-                  onRequireConnection={() => setIsConnectModalOpen(true)}
+                  isConnected={isCoupleConnected}
+                  onRequireConnection={() => {
+                    alert('커플 연동이 필요한 기능입니다! 💕');
+                    setIsSettingsOpen(true);
+                  }}
                   onUpdateSettings={async (updates) => {
                     await updateCoupleSettings(userData.coupleId, updates);
                     setSettings(prev => ({ ...prev, ...updates }));
