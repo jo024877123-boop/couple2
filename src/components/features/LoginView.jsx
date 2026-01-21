@@ -74,13 +74,25 @@ const LoginView = () => {
     ];
 
     return (
-        <div className="login-mode min-h-[100dvh] w-full flex flex-col lg:flex-row bg-[#f8fcff] relative overflow-hidden font-sans selection:bg-indigo-100 selection:text-indigo-900">
+        <div id="login-view-root" className="min-h-[100dvh] w-full flex flex-col lg:flex-row bg-[#f8fcff] relative overflow-hidden font-sans selection:bg-indigo-100 selection:text-indigo-900">
 
-            {/* Force Cursor Reset for Login View */}
+            {/* Force Cursor Reset for Login View (ID Selector for max specificity) */}
             <style>{`
-                .login-mode, .login-mode * { cursor: default !important; }
-                .login-mode button, .login-mode a, .login-mode [role="button"] { cursor: pointer !important; }
-                .login-mode input { cursor: text !important; }
+                #login-view-root, #login-view-root * { 
+                    cursor: default !important; 
+                }
+                #login-view-root button, 
+                #login-view-root a, 
+                #login-view-root [role="button"],
+                #login-view-root input[type="submit"],
+                #login-view-root input[type="button"] { 
+                    cursor: pointer !important; 
+                }
+                #login-view-root input[type="text"],
+                #login-view-root input[type="email"],
+                #login-view-root input[type="password"] { 
+                    cursor: text !important; 
+                }
             `}</style>
 
             {/* 1. Left Side (Emotional Visuals) */}
