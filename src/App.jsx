@@ -1528,101 +1528,7 @@ const App = () => {
 
             <form onSubmit={(e) => { e.preventDefault(); setIsSettingsOpen(false); }} className="space-y-5">
 
-              {/* Couple Connection Section */}
-              <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
-                <h4 className="font-bold text-sm text-gray-800 mb-4 flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-theme-100 text-theme-600 flex items-center justify-center"><Icon name="link" size={12} /></span>
-                    커플 연동 상태
-                  </span>
-                  {isConnected ? (
-                    <span className="text-[10px] bg-green-100 text-green-600 px-2 py-1 rounded-full font-bold">🟢 연결됨</span>
-                  ) : (
-                    <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-1 rounded-full font-bold">⚪ 연결 대기중</span>
-                  )}
-                </h4>
 
-                {!isConnected ? (
-                  <>
-                    {/* Show invite code only if not connected */}
-                    {/* Show invite code only if not connected */}
-                    {/* Show invite code or generate button */}
-                    {settings.inviteCode ? (
-                      <div className="flex items-center justify-between mb-4 bg-white p-3 rounded-xl border border-gray-200">
-                        <span className="text-secondary text-sm font-medium">내 초대 코드</span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-black text-xl text-theme-600 tracking-widest">{settings.inviteCode}</span>
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              if (confirm('초대 코드를 새로 발급하시겠습니까?\n이전 코드는 사용할 수 없게 됩니다.')) {
-                                const newCode = await generateInviteCode();
-                                if (newCode) setSettings(prev => ({ ...prev, inviteCode: newCode }));
-                              }
-                            }}
-                            className="p-1.5 text-gray-400 hover:text-theme-500 hover:bg-theme-50 rounded-full transition-colors"
-                            title="코드 재발급"
-                          >
-                            <Icon name="refresh-cw" size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="mb-4">
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            const newCode = await generateInviteCode();
-                            if (newCode) setSettings(prev => ({ ...prev, inviteCode: newCode }));
-                          }}
-                          className="w-full py-3 rounded-xl border-2 border-dashed border-theme-300 text-theme-600 font-bold hover:bg-theme-50 transition-all flex items-center justify-center gap-2"
-                        >
-                          <Icon name="plus" size={16} /> 초대 코드 발급받기
-                        </button>
-                        <p className="text-xs text-center text-gray-400 mt-2">상대방에게 공유할 코드를 생성합니다.</p>
-                      </div>
-                    )}
-                    <div className="flex gap-2">
-                      <input type="text" placeholder="상대방 코드 6자리" id="partnerCodeInput" className="bg-white border-2 border-transparent focus:border-theme-300 rounded-xl px-3 py-3 text-sm flex-1 outline-none text-center font-bold tracking-widest" maxLength={6} />
-                      <button type="button" onClick={async () => {
-                        const code = document.getElementById('partnerCodeInput').value;
-                        if (code) {
-                          try {
-                            await connectWithCode(code);
-                            alert('연결되었습니다! 🎉');
-                            window.location.reload();
-                          } catch (e) {
-                            alert(e.message);
-                          }
-                        }
-                      }} className="bg-theme-500 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-theme btn-bounce">연결</button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="text-center p-3 bg-green-50 text-green-600 rounded-xl font-bold text-sm">
-                      ❤️ {coupleUsers.find(u => u.uid !== currentUser?.uid)?.name || '파트너'}님과 연결되었습니다!
-                    </div>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (confirm('💔 정말 연동을 해제하시겠습니까?\n\n서로의 연결이 끊어지며, 나는 새로운 공간으로 이동하게 됩니다.')) {
-                          try {
-                            await disconnectCouple();
-                            alert('연동이 해제되었습니다. 새로운 공간이 생성되었습니다.');
-                            window.location.reload();
-                          } catch (e) {
-                            alert('연동 해제 실패: ' + e.message);
-                          }
-                        }
-                      }}
-                      className="w-full py-4 rounded-xl bg-red-50 text-red-500 font-bold text-sm hover:bg-red-100 transition-all flex items-center justify-center gap-2"
-                    >
-                      💔 상대방과 연결 끊기
-                    </button>
-                  </div>
-                )}
-              </div>
 
               <div className="border-t border-gray-100 my-4 pt-4">
                 {/* 커플 연결 섹션 (미연결 시에만 표시) */}
@@ -1773,6 +1679,29 @@ const App = () => {
                   setIsSettingsOpen(false);
                 }}
               >저장하기</button>
+
+              {/* Disconnect Button (Only when connected) */}
+              {isCoupleConnected && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (confirm('💔 정말 연동을 해제하시겠습니까?\n\n서로의 연결이 끊어지며, 나는 새로운 공간으로 이동하게 됩니다.')) {
+                      try {
+                        await disconnectCouple();
+                        alert('연동이 해제되었습니다. 새로운 공간이 생성되었습니다.');
+                        window.location.reload();
+                      } catch (e) {
+                        alert('연동 해제 실패: ' + e.message);
+                      }
+                    }
+                  }}
+                  className="w-full py-3 rounded-xl border border-red-100 bg-red-50 text-red-500 font-bold hover:bg-red-100 transition-all mt-4"
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    <Icon name="user-x" size={18} /> 상대방과 연결 끊기
+                  </span>
+                </button>
+              )}
 
               {/* Logout Button */}
               <button
