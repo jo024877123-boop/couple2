@@ -19,6 +19,7 @@ import AdminDashboard from './components/features/AdminDashboard'; // Admin Dash
 import GrowthWidget from './components/features/GrowthWidget'; // Growth Widget
 import AchievementModal from './components/features/AchievementModal'; // Achievement Modal
 import BalanceGameCard from './components/features/BalanceGameCard'; // Balance Game
+import EndingCredits from './components/features/EndingCredits'; // Hidden Ending // Hidden Ending
 import { useDrag } from '@use-gesture/react';
 import { useAuth } from './context/AuthContext'; // Auth Hook
 import {
@@ -124,6 +125,7 @@ const App = () => {
   });
 
   const [posts, setPosts] = useState([]); // Loaded from DB
+  const [isEndingOpen, setIsEndingOpen] = useState(false); // Hidden Ending State
   const [coupleUsers, setCoupleUsers] = useState([]);
 
   const [activeTab, setActiveTabState] = useState('feed');
@@ -589,6 +591,16 @@ const App = () => {
     <div className={`min-h-screen text-primary ${isAdmin ? 'pt-12' : ''}`}>
       <AdminOverlay />
 
+      {/* Hidden Ending Overlay */}
+      {isEndingOpen && (
+        <EndingCredits
+          onClose={() => setIsEndingOpen(false)}
+          coupleUsers={coupleUsers}
+          settings={settings}
+          posts={posts}
+        />
+      )}
+
       {/* 사이드바 */}
       {/* 사이드바 (데스크탑) */}
       <aside className={`hidden lg:flex fixed left-0 top-0 bottom-0 ${isSidebarCollapsed ? 'w-20' : 'w-72'} glass border-r border-theme-100 flex-col transition-all duration-300 z-30`}>
@@ -818,7 +830,12 @@ const App = () => {
                   const newGrowth = { ...settings.growth, level: nextLevel.level };
                   await updateCoupleSettings(userData.coupleId, { growth: newGrowth });
                   setSettings(prev => ({ ...prev, growth: newGrowth }));
-                  alert(`🎉 축하합니다! 사랑의 나무가 "${nextLevel.label}"로 성장했습니다!`);
+
+                  if (nextLevel.level === 7) {
+                    setIsEndingOpen(true); // Trigger Hidden Ending
+                  } else {
+                    alert(`🎉 축하합니다! 사랑의 나무가 "${nextLevel.label}"로 성장했습니다!`);
+                  }
                 }}
                 onClick={() => setIsAchievementOpen(true)}
                 onCheckIn={handleAttendanceCheck}

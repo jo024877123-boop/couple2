@@ -31,6 +31,9 @@ export const ACHIEVEMENTS = [
     { id: 'balance_1', title: '선택의 시작', description: '밸런스 게임에 처음 참여했어요', target: 1, type: 'balance', reward: 30 },
     { id: 'balance_10', title: '서로를 알아가는 중', description: '밸런스 게임 10회 완료!', target: 10, type: 'balance', reward: 100 },
     { id: 'balance_30', title: '취향 저격수', description: '밸런스 게임 30회 완료!', target: 30, type: 'balance', reward: 200 },
+    { id: 'balance_50', title: '환상의 짝꿍', description: '밸런스 게임 50회 완료! 우린 통하는 사이', target: 50, type: 'balance', reward: 300 },
+    { id: 'balance_100', title: '영혼의 단짝', description: '100번의 선택, 100번의 서로 이해하기', target: 100, type: 'balance', reward: 500 },
+    { id: 'balance_300', title: '운명의 데스티니', description: '300회 달성! 더 이상 물어볼 게 없어요', target: 300, type: 'balance', reward: 1000 },
 ];
 
 export const MOOD_OPTIONS = [
