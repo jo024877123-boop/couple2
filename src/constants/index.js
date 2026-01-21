@@ -8,13 +8,13 @@ export const THEMES = [
 ];
 
 export const LEVELS = [
-    { level: 1, minExp: 0, next: 100, icon: '🌱', label: '사랑의 씨앗', desc: '작은 씨앗을 심었어요' },
-    { level: 2, minExp: 100, next: 500, icon: '🌿', label: '반짝이는 새싹', desc: '사랑이 싹트고 있어요' },
-    { level: 3, minExp: 500, next: 1500, icon: '🎋', label: '자라나는 줄기', desc: '쑥쑥 자라고 있네요', reward: '👾 픽셀 테마 해금!' },
-    { level: 4, minExp: 1500, next: 3000, icon: '🌳', label: '튼튼한 나무', desc: '비바람에도 끄떡없어요', reward: '🖍️ 크레파스 테마 해금!' },
-    { level: 5, minExp: 3000, next: 5000, icon: '✨', label: '풍성한 나무', desc: '그늘이 되어줄게요', reward: '🪐 갤럭시 테마 해금!' },
-    { level: 6, minExp: 5000, next: 7000, icon: '🌸', label: '꽃 피운 나무', desc: '향기로운 추억이 가득' },
-    { level: 7, minExp: 7000, next: Infinity, icon: '🍎', label: '사랑의 결실', desc: '영원한 사랑을 맹세해요', reward: '💖 히든 엔딩 해금' },
+    { level: 1, minExp: 0, next: 150, icon: '🌱', label: '사랑의 씨앗', desc: '작은 씨앗을 심었어요' },
+    { level: 2, minExp: 150, next: 600, icon: '🌿', label: '반짝이는 새싹', desc: '사랑이 싹트고 있어요' },
+    { level: 3, minExp: 600, next: 2000, icon: '🎋', label: '자라나는 줄기', desc: '쑥쑥 자라고 있네요', reward: '👾 픽셀 테마 해금!' },
+    { level: 4, minExp: 2000, next: 4000, icon: '🌳', label: '튼튼한 나무', desc: '비바람에도 끄떡없어요', reward: '🖍️ 크레파스 테마 해금!' },
+    { level: 5, minExp: 4000, next: 7000, icon: '✨', label: '풍성한 나무', desc: '그늘이 되어줄게요', reward: '🪐 갤럭시 테마 해금!' },
+    { level: 6, minExp: 7000, next: 10000, icon: '🌸', label: '꽃 피운 나무', desc: '향기로운 추억이 가득' },
+    { level: 7, minExp: 10000, next: Infinity, icon: '🍎', label: '사랑의 결실', desc: '영원한 사랑을 맹세해요', reward: '💖 히든 엔딩 해금' },
 ];
 
 export const ACHIEVEMENTS = [
@@ -27,6 +27,10 @@ export const ACHIEVEMENTS = [
     { id: 'post_10', title: '기록 꿈나무', description: '벌써 10개의 이야기가 쌓였네요', target: 10, type: 'post', reward: 100 },
     { id: 'post_50', title: '추억 수집가', description: '50개의 순간들을 영원히 간직해요', target: 50, type: 'post', reward: 300 },
     { id: 'post_100', title: '우리만의 역사책', description: '100개의 기록, 한 권의 책이 되었어요', target: 100, type: 'post', reward: 500 },
+
+    { id: 'balance_1', title: '선택의 시작', description: '밸런스 게임에 처음 참여했어요', target: 1, type: 'balance', reward: 30 },
+    { id: 'balance_10', title: '서로를 알아가는 중', description: '밸런스 게임 10회 완료!', target: 10, type: 'balance', reward: 100 },
+    { id: 'balance_30', title: '취향 저격수', description: '밸런스 게임 30회 완료!', target: 30, type: 'balance', reward: 200 },
 ];
 
 export const MOOD_OPTIONS = [
