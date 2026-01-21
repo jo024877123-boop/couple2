@@ -345,16 +345,31 @@ const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings,
                                         "{myAnswerData.option === 'A' ? todayQuestion.optionA : todayQuestion.optionB}"
                                     </p>
                                 </div>
-                                <button
-                                    onClick={() => {
-                                        setComment(myAnswerData.comment || '');
-                                        setIsInputOpen(true);
-                                    }}
-                                    className="p-1 hover:bg-theme-50 rounded-lg text-gray-400 hover:text-theme-500 transition-colors"
-                                    title="코멘트 수정"
-                                >
-                                    <Icon name="pencil" size={12} />
-                                </button>
+                                <div className="flex items-center gap-1">
+                                    {/* 다시 고르기 버튼 */}
+                                    <button
+                                        onClick={() => {
+                                            setSelectedOption(null);
+                                            setLocalSubmitted(false);
+                                        }}
+                                        className="p-1.5 hover:bg-orange-50 rounded-lg text-orange-400 hover:text-orange-500 transition-colors flex items-center gap-1"
+                                        title="다시 고르기"
+                                    >
+                                        <Icon name="rotate-ccw" size={12} />
+                                        <span className="text-[10px] font-medium">다시 고르기</span>
+                                    </button>
+                                    {/* 코멘트 수정 버튼 */}
+                                    <button
+                                        onClick={() => {
+                                            setComment(myAnswerData.comment || '');
+                                            setIsInputOpen(true);
+                                        }}
+                                        className="p-1 hover:bg-theme-50 rounded-lg text-gray-400 hover:text-theme-500 transition-colors"
+                                        title="코멘트 수정"
+                                    >
+                                        <Icon name="pencil" size={12} />
+                                    </button>
+                                </div>
                             </div>
                             <p className="text-sm text-gray-800 pl-1 whitespace-pre-wrap">{myAnswerData.comment || "코멘트 없음"}</p>
                         </div>
