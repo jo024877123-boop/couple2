@@ -8,16 +8,20 @@ const ConnectModal = ({ onClose }) => {
     const [inputCode, setInputCode] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [generatedCode, setGeneratedCode] = useState(null);
 
     // 이미 생성된 코드가 있다면 'create' 모드로 보여주기
     // coupleData가 있는데 user2가 비어있으면 -> 대기 중인 상태
-    const myCode = coupleData?.inviteCode;
+    const myCode = generatedCode || coupleData?.inviteCode;
     const isWaiting = coupleData && !coupleData.user2;
 
     const handleCreateCode = async () => {
         setLoading(true);
         try {
-            await createMyCoupleSpace();
+            const result = await createMyCoupleSpace();
+            if (result && result.inviteCode) {
+                setGeneratedCode(result.inviteCode);
+            }
             setMode('create');
         } catch (err) {
             console.error(err);

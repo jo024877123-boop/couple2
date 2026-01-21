@@ -97,7 +97,7 @@ const Logo = ({ size = 40, className = "" }) => (
 );
 
 const App = () => {
-  const { currentUser, userData, logout, connectWithCode, generateInviteCode, disconnectCouple, isAdmin, setUserData, isCoupleConnected } = useAuth();
+  const { currentUser, userData, logout, connectWithCode, generateInviteCode, disconnectCouple, isAdmin, setUserData, isCoupleConnected, coupleData, loading } = useAuth();
   const [adminViewTarget, setAdminViewTarget] = useState(null); // Couple ID to monitor
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false); // Modal control for connection
 
@@ -141,6 +141,13 @@ const App = () => {
     setDirection(newIndex > currentIndex ? 'right' : 'left');
     setActiveTabState(newTab);
   };
+
+  // Sync coupleData to settings when loaded from Firebase
+  useEffect(() => {
+    if (coupleData) {
+      setSettings(prev => ({ ...prev, ...coupleData }));
+    }
+  }, [coupleData]);
 
   // Wrap interactions without sound
   // Wrap interactions without sound
@@ -845,17 +852,20 @@ const App = () => {
               />
 
               {/* 오늘의 밸런스 게임 */}
-              <BalanceGameCard
-                settings={settings}
-                coupleUsers={coupleUsers}
-                currentUser={userData}
-                isConnected={isConnected}
-                onRequireConnection={() => setIsConnectModalOpen(true)}
-                onUpdateSettings={async (updates) => {
-                  await updateCoupleSettings(userData.coupleId, updates);
-                  setSettings(prev => ({ ...prev, ...updates }));
-                }}
-              />
+              {/* 오늘의 밸런스 게임 (로딩 완료 시에만 렌더링하여 초기화 방지) */}
+              {!loading && (
+                <BalanceGameCard
+                  settings={settings}
+                  coupleUsers={coupleUsers}
+                  currentUser={userData}
+                  isConnected={isConnected}
+                  onRequireConnection={() => setIsConnectModalOpen(true)}
+                  onUpdateSettings={async (updates) => {
+                    await updateCoupleSettings(userData.coupleId, updates);
+                    setSettings(prev => ({ ...prev, ...updates }));
+                  }}
+                />
+              )}
               {posts.length === 0 ? (
                 <EmptyState onAdd={() => setIsModalOpen(true)} />
               ) : (
