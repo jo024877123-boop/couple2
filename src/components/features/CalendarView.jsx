@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Icon from '../ui/Icon';
 import { MOOD_OPTIONS, MEMO_COLORS } from '../../constants';
 
@@ -352,52 +353,69 @@ const CalendarView = ({
             </div>
 
             {/* 기념일 추가/수정 모달 */}
-            {isAnniversaryFormOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setIsAnniversaryFormOpen(false)}>
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-                    <div className="relative card-bg rounded-2xl shadow-2xl p-5 w-full max-w-sm border border-theme-100" onClick={(e) => e.stopPropagation()}>
-                        <h3 className="font-bold text-lg mb-4">{editingAnniversary ? '기념일 수정' : '새 기념일 추가'}</h3>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-secondary mb-1">이모지</label>
-                                <div className="flex gap-2 flex-wrap">
-                                    {['💕', '❤️', '🎂', '🎉', '🎁', '💍', '🌹', '✨', '🥂', '📅'].map(e => (
-                                        <button key={e} onClick={() => setAnniversaryForm(prev => ({ ...prev, emoji: e }))}
-                                            className={`text-2xl p-1 rounded ${anniversaryForm.emoji === e ? 'bg-theme-100 ring-2 ring-theme-300' : ''}`}>
-                                            {e}
-                                        </button>
-                                    ))}
+            {/* 기념일 추가/수정 모달 */}
+            <AnimatePresence>
+                {isAnniversaryFormOpen && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
+                            onClick={() => setIsAnniversaryFormOpen(false)}
+                        />
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+                            <motion.div
+                                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                                animate={{ scale: 1, opacity: 1, y: 0 }}
+                                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                                className="pointer-events-auto relative card-bg rounded-2xl shadow-2xl p-5 w-full max-w-sm border border-theme-100"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <h3 className="font-bold text-lg mb-4">{editingAnniversary ? '기념일 수정' : '새 기념일 추가'}</h3>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-secondary mb-1">이모지</label>
+                                        <div className="flex gap-2 flex-wrap">
+                                            {['💕', '❤️', '🎂', '🎉', '🎁', '💍', '🌹', '✨', '🥂', '📅'].map(e => (
+                                                <button key={e} onClick={() => setAnniversaryForm(prev => ({ ...prev, emoji: e }))}
+                                                    className={`text-2xl p-1 rounded ${anniversaryForm.emoji === e ? 'bg-theme-100 ring-2 ring-theme-300' : ''}`}>
+                                                    {e}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-secondary mb-1">기념일 이름</label>
+                                        <input type="text" value={anniversaryForm.title} onChange={(e) => setAnniversaryForm(prev => ({ ...prev, title: e.target.value }))}
+                                            placeholder="예: 첫 키스 기념일" className="w-full px-3 py-2 border border-theme-200 rounded-lg text-sm bg-white" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-secondary mb-1">날짜 선택</label>
+                                        <input
+                                            type="date"
+                                            value={anniversaryForm.date}
+                                            onChange={(e) => setAnniversaryForm(prev => ({ ...prev, date: e.target.value }))}
+                                            onClick={(e) => e.target.showPicker && e.target.showPicker()}
+                                            className="w-full px-4 py-3 border-2 border-theme-200 rounded-xl text-base bg-white focus:border-theme-400 focus:outline-none cursor-pointer"
+                                            style={{ colorScheme: 'light' }}
+                                        />
+                                        {anniversaryForm.date && (
+                                            <p className="text-xs text-theme-500 mt-1">
+                                                선택된 날짜: {new Date(anniversaryForm.date).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-secondary mb-1">기념일 이름</label>
-                                <input type="text" value={anniversaryForm.title} onChange={(e) => setAnniversaryForm(prev => ({ ...prev, title: e.target.value }))}
-                                    placeholder="예: 첫 키스 기념일" className="w-full px-3 py-2 border border-theme-200 rounded-lg text-sm bg-white" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-secondary mb-1">날짜 선택</label>
-                                <input
-                                    type="date"
-                                    value={anniversaryForm.date}
-                                    onChange={(e) => setAnniversaryForm(prev => ({ ...prev, date: e.target.value }))}
-                                    onClick={(e) => e.target.showPicker && e.target.showPicker()}
-                                    className="w-full px-4 py-3 border-2 border-theme-200 rounded-xl text-base bg-white focus:border-theme-400 focus:outline-none cursor-pointer"
-                                    style={{ colorScheme: 'light' }}
-                                />
-                                {anniversaryForm.date && (
-                                    <p className="text-xs text-theme-500 mt-1">
-                                        선택된 날짜: {new Date(anniversaryForm.date).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}
-                                    </p>
-                                )}
-                            </div>
+                                <div className="flex gap-2 mt-6">
+                                    <button onClick={() => setIsAnniversaryFormOpen(false)} className="flex-1 py-2 border border-theme-200 rounded-lg text-secondary text-sm">취소</button>
+                                    <button onClick={handleSaveAnniversary} className="flex-1 py-2 bg-theme-500 text-white rounded-lg text-sm font-medium">저장</button>
+                                </div>
+                            </motion.div>
                         </div>
-                        <div className="flex gap-2 mt-6">
-                            <button onClick={() => setIsAnniversaryFormOpen(false)} className="flex-1 py-2 border border-theme-200 rounded-lg text-secondary text-sm">취소</button>
-                            <button onClick={handleSaveAnniversary} className="flex-1 py-2 bg-theme-500 text-white rounded-lg text-sm font-medium">저장</button>
-                        </div>
-                    </div>
-                </div>
-            )}
+                    </>
+                )}
+            </AnimatePresence>
 
             {/* 달력 */}
             <div
@@ -506,169 +524,200 @@ const CalendarView = ({
             </div>
 
             {/* 상세 모달 */}
-            {isModalOpen && selectedDate && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setIsModalOpen(false)}>
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-                    <div className="relative card-bg rounded-2xl shadow-2xl p-5 w-full max-w-sm max-h-[80vh] overflow-y-auto border border-theme-100" onClick={(e) => e.stopPropagation()}>
-                        {/* 헤더 */}
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-bold text-lg text-primary">
-                                {new Date(selectedDate).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' })}
-                            </h3>
-                            <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-theme-100 rounded-full">
-                                <Icon name="x" size={20} className="text-secondary" />
-                            </button>
-                        </div>
+            {/* 상세 모달 (Bottom Sheet on Mobile) */}
+            <AnimatePresence>
+                {isModalOpen && selectedDate && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
+                            onClick={() => setIsModalOpen(false)}
+                        />
+                        <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center pointer-events-none">
+                            <motion.div
+                                initial={{ y: "100%" }}
+                                animate={{ y: 0 }}
+                                exit={{ y: "100%" }}
+                                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                                drag="y"
+                                dragConstraints={{ top: 0, bottom: 0 }}
+                                dragElastic={{ top: 0, bottom: 0.2 }}
+                                onDragEnd={(_, info) => {
+                                    if (info.offset.y > 100) setIsModalOpen(false);
+                                }}
+                                className="pointer-events-auto relative w-full lg:w-auto lg:min-w-[400px] bg-white lg:card-bg rounded-t-[2rem] lg:rounded-2xl shadow-2xl max-h-[90vh] lg:max-h-[85vh] flex flex-col border-t lg:border border-theme-100"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                {/* Drag Handle (Mobile) */}
+                                <div className="w-full flex justify-center pt-3 pb-1 lg:hidden">
+                                    <div className="w-12 h-1.5 rounded-full bg-gray-200" />
+                                </div>
 
-                        {/* 오늘의 기분 스탬프 */}
-                        <div className="mb-6 border-b border-theme-100 pb-4">
-                            <h4 className="font-semibold text-primary text-sm mb-3 flex items-center gap-2">
-                                <Icon name="smile" size={16} /> 오늘의 기분
-                            </h4>
-                            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                                {MOOD_OPTIONS.map(mood => {
-                                    const isSelected = moodStamps[selectedDate] === mood.id;
-                                    return (
-                                        <button key={mood.id} onClick={() => setMoodStamps(prev => {
-                                            if (prev[selectedDate] === mood.id) {
-                                                const next = { ...prev };
-                                                delete next[selectedDate];
-                                                return next;
-                                            }
-                                            return { ...prev, [selectedDate]: mood.id };
-                                        })}
-                                            className={`flex-shrink-0 flex flex-col items-center justify-center min-w-[3.5rem] h-14 rounded-2xl border transition-all ${isSelected ? `${mood.bg} ${mood.color} border-current ring-1 ring-current shadow-sm` : 'border-transparent bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-500'}`}>
-                                            <Icon name={mood.icon} size={20} className="mb-0.5" />
-                                            <span className="text-[10px] font-bold">{mood.label}</span>
+                                <div className="p-5 overflow-y-auto">
+                                    {/* 헤더 */}
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="font-bold text-lg text-primary">
+                                            {new Date(selectedDate).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' })}
+                                        </h3>
+                                        <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-theme-100 rounded-full">
+                                            <Icon name="x" size={20} className="text-secondary" />
                                         </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
+                                    </div>
 
-                        {/* 메모 섹션 */}
-                        <div className="mb-6">
-                            <div className="flex items-center justify-between mb-3">
-                                <h4 className="font-semibold text-primary flex items-center gap-2">
-                                    <Icon name="file-text" size={16} /> 메모 ({getMemosForDate(selectedDate).length})
-                                </h4>
-                                <button
-                                    onClick={() => { setIsAddingMemo(true); setMemoTitle(''); setMemoColor('#007AFF'); }}
-                                    className="text-sm text-theme-500 font-medium"
-                                >+ 추가</button>
-                            </div>
+                                    {/* 오늘의 기분 스탬프 */}
+                                    <div className="mb-6 border-b border-theme-100 pb-4">
+                                        <h4 className="font-semibold text-primary text-sm mb-3 flex items-center gap-2">
+                                            <Icon name="smile" size={16} /> 오늘의 기분
+                                        </h4>
+                                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                                            {MOOD_OPTIONS.map(mood => {
+                                                const isSelected = moodStamps[selectedDate] === mood.id;
+                                                return (
+                                                    <button key={mood.id} onClick={() => setMoodStamps(prev => {
+                                                        if (prev[selectedDate] === mood.id) {
+                                                            const next = { ...prev };
+                                                            delete next[selectedDate];
+                                                            return next;
+                                                        }
+                                                        return { ...prev, [selectedDate]: mood.id };
+                                                    })}
+                                                        className={`flex-shrink-0 flex flex-col items-center justify-center min-w-[3.5rem] h-14 rounded-2xl border transition-all ${isSelected ? `${mood.bg} ${mood.color} border-current ring-1 ring-current shadow-sm` : 'border-transparent bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-500'}`}>
+                                                        <Icon name={mood.icon} size={20} className="mb-0.5" />
+                                                        <span className="text-[10px] font-bold">{mood.label}</span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
 
-                            {/* 메모 추가/수정 폼 */}
-                            {(isAddingMemo || editingMemo) && (
-                                <div className="mb-3 p-3 rounded-xl border border-theme-200 bg-theme-50">
-                                    <input
-                                        type="text"
-                                        value={memoTitle}
-                                        onChange={(e) => setMemoTitle(e.target.value)}
-                                        placeholder="메모 내용..."
-                                        className="w-full px-3 py-2 border border-theme-200 rounded-lg text-sm mb-2 bg-white text-gray-800"
-                                        autoFocus
-                                        onKeyDown={(e) => e.key === 'Enter' && (editingMemo ? updateMemo() : addMemo())}
-                                    />
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <span className="text-xs text-secondary">색상:</span>
-                                        {MEMO_COLORS.map(c => (
+                                    {/* 메모 섹션 */}
+                                    <div className="mb-6">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <h4 className="font-semibold text-primary flex items-center gap-2">
+                                                <Icon name="file-text" size={16} /> 메모 ({getMemosForDate(selectedDate).length})
+                                            </h4>
                                             <button
-                                                key={c}
-                                                onClick={() => setMemoColor(c)}
-                                                className={`w-5 h-5 rounded-full transition-transform ${memoColor === c ? 'ring-2 ring-offset-1 ring-theme-400 scale-110' : ''}`}
-                                                style={{ backgroundColor: c }}
-                                            />
-                                        ))}
+                                                onClick={() => { setIsAddingMemo(true); setMemoTitle(''); setMemoColor('#007AFF'); }}
+                                                className="text-sm text-theme-500 font-medium"
+                                            >+ 추가</button>
+                                        </div>
+
+                                        {/* 메모 추가/수정 폼 */}
+                                        {(isAddingMemo || editingMemo) && (
+                                            <div className="mb-3 p-3 rounded-xl border border-theme-200 bg-theme-50">
+                                                <input
+                                                    type="text"
+                                                    value={memoTitle}
+                                                    onChange={(e) => setMemoTitle(e.target.value)}
+                                                    placeholder="메모 내용..."
+                                                    className="w-full px-3 py-2 border border-theme-200 rounded-lg text-sm mb-2 bg-white text-gray-800"
+                                                    autoFocus
+                                                    onKeyDown={(e) => e.key === 'Enter' && (editingMemo ? updateMemo() : addMemo())}
+                                                />
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="text-xs text-secondary">색상:</span>
+                                                    {MEMO_COLORS.map(c => (
+                                                        <button
+                                                            key={c}
+                                                            onClick={() => setMemoColor(c)}
+                                                            className={`w-5 h-5 rounded-full transition-transform ${memoColor === c ? 'ring-2 ring-offset-1 ring-theme-400 scale-110' : ''}`}
+                                                            style={{ backgroundColor: c }}
+                                                        />
+                                                    ))}
+                                                </div>
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <input
+                                                        type="checkbox"
+                                                        id="recurring"
+                                                        checked={isRecurringMemo}
+                                                        onChange={(e) => setIsRecurringMemo(e.target.checked)}
+                                                        className="rounded border-theme-300 text-theme-500 focus:ring-theme-500"
+                                                    />
+                                                    <label htmlFor="recurring" className="text-xs text-secondary cursor-pointer select-none flex items-center gap-1">
+                                                        <Icon name="rotate-cw" size={12} /> 매년 반복
+                                                    </label>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button onClick={editingMemo ? updateMemo : addMemo} className="flex-1 py-2 bg-theme-500 text-white rounded-lg text-sm font-medium">
+                                                        {editingMemo ? '수정' : '추가'}
+                                                    </button>
+                                                    <button onClick={() => { setIsAddingMemo(false); setEditingMemo(null); }} className="px-3 py-2 text-secondary text-sm">취소</button>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* 메모 목록 */}
+                                        <div className="space-y-2">
+                                            {getMemosForDate(selectedDate).map(memo => (
+                                                <div key={memo.id} className="p-3 rounded-lg flex items-center justify-between group" style={{ backgroundColor: memo.color + '20', borderLeft: `3px solid ${memo.color}` }}>
+                                                    <span className="text-sm text-primary flex items-center gap-1">
+                                                        {memo.title}
+                                                        {(memo.isRecurring || memo.isRecurringDisplay) && <Icon name="rotate-cw" size={10} className="text-secondary" />}
+                                                    </span>
+                                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button onClick={() => { setEditingMemo(memo); setMemoTitle(memo.title); setMemoColor(memo.color || '#007AFF'); setIsAddingMemo(false); }} className="p-1 hover:bg-white/50 rounded">
+                                                            <Icon name="pencil" size={12} className="text-secondary" />
+                                                        </button>
+                                                        <button onClick={() => deleteMemo(memo.id)} className="p-1 hover:bg-white/50 rounded">
+                                                            <Icon name="trash-2" size={12} className="text-red-400" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {getMemosForDate(selectedDate).length === 0 && !isAddingMemo && (
+                                                <p className="text-center text-secondary text-sm py-3">메모가 없습니다</p>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <input
-                                            type="checkbox"
-                                            id="recurring"
-                                            checked={isRecurringMemo}
-                                            onChange={(e) => setIsRecurringMemo(e.target.checked)}
-                                            className="rounded border-theme-300 text-theme-500 focus:ring-theme-500"
-                                        />
-                                        <label htmlFor="recurring" className="text-xs text-secondary cursor-pointer select-none flex items-center gap-1">
-                                            <Icon name="rotate-cw" size={12} /> 매년 반복
-                                        </label>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <button onClick={editingMemo ? updateMemo : addMemo} className="flex-1 py-2 bg-theme-500 text-white rounded-lg text-sm font-medium">
-                                            {editingMemo ? '수정' : '추가'}
-                                        </button>
-                                        <button onClick={() => { setIsAddingMemo(false); setEditingMemo(null); }} className="px-3 py-2 text-secondary text-sm">취소</button>
+
+                                    {/* 게시글 섹션 */}
+                                    <div>
+                                        <h4 className="font-semibold text-primary flex items-center gap-2 mb-3">
+                                            <Icon name="image" size={16} className="text-pink-400" /> 게시글 ({getPostsForDate(selectedDate).length})
+                                        </h4>
+                                        <div className="space-y-2">
+                                            {getPostsForDate(selectedDate).map(post => (
+                                                <div key={post.id} className="p-3 rounded-lg flex items-center gap-3" style={{ backgroundColor: getPostColor(post.id) + '20', borderLeft: `3px solid ${getPostColor(post.id)}` }}>
+                                                    <button onClick={() => { onSelectPost(post); setIsModalOpen(false); }} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+                                                        {post.media[0] && (
+                                                            post.media[0].type === 'video' ? (
+                                                                <div className="w-10 h-10 rounded-lg bg-black/10 flex items-center justify-center shrink-0">
+                                                                    <Icon name="video" size={20} className="text-primary" />
+                                                                </div>
+                                                            ) : (
+                                                                <img src={post.media[0].url} className="w-10 h-10 rounded-lg object-cover shrink-0" alt="" />
+                                                            )
+                                                        )}
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-sm text-primary truncate">{post.content}</p>
+                                                        </div>
+                                                    </button>
+                                                    {/* 색상 선택 */}
+                                                    <div className="flex gap-0.5">
+                                                        {MEMO_COLORS.slice(0, 4).map(c => (
+                                                            <button
+                                                                key={c}
+                                                                onClick={() => setPostColor(post.id, c)}
+                                                                className={`w-4 h-4 rounded-full transition-transform ${getPostColor(post.id) === c ? 'ring-1 ring-offset-1 ring-gray-400 scale-110' : ''}`}
+                                                                style={{ backgroundColor: c }}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {getPostsForDate(selectedDate).length === 0 && (
+                                                <p className="text-center text-secondary text-sm py-3">게시글이 없습니다</p>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            )}
-
-                            {/* 메모 목록 */}
-                            <div className="space-y-2">
-                                {getMemosForDate(selectedDate).map(memo => (
-                                    <div key={memo.id} className="p-3 rounded-lg flex items-center justify-between group" style={{ backgroundColor: memo.color + '20', borderLeft: `3px solid ${memo.color}` }}>
-                                        <span className="text-sm text-primary flex items-center gap-1">
-                                            {memo.title}
-                                            {(memo.isRecurring || memo.isRecurringDisplay) && <Icon name="rotate-cw" size={10} className="text-secondary" />}
-                                        </span>
-                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button onClick={() => { setEditingMemo(memo); setMemoTitle(memo.title); setMemoColor(memo.color || '#007AFF'); setIsAddingMemo(false); }} className="p-1 hover:bg-white/50 rounded">
-                                                <Icon name="pencil" size={12} className="text-secondary" />
-                                            </button>
-                                            <button onClick={() => deleteMemo(memo.id)} className="p-1 hover:bg-white/50 rounded">
-                                                <Icon name="trash-2" size={12} className="text-red-400" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                                {getMemosForDate(selectedDate).length === 0 && !isAddingMemo && (
-                                    <p className="text-center text-secondary text-sm py-3">메모가 없습니다</p>
-                                )}
-                            </div>
+                            </motion.div>
                         </div>
-
-                        {/* 게시글 섹션 */}
-                        <div>
-                            <h4 className="font-semibold text-primary flex items-center gap-2 mb-3">
-                                <Icon name="image" size={16} className="text-pink-400" /> 게시글 ({getPostsForDate(selectedDate).length})
-                            </h4>
-                            <div className="space-y-2">
-                                {getPostsForDate(selectedDate).map(post => (
-                                    <div key={post.id} className="p-3 rounded-lg flex items-center gap-3" style={{ backgroundColor: getPostColor(post.id) + '20', borderLeft: `3px solid ${getPostColor(post.id)}` }}>
-                                        <button onClick={() => { onSelectPost(post); setIsModalOpen(false); }} className="flex items-center gap-3 flex-1 min-w-0 text-left">
-                                            {post.media[0] && (
-                                                post.media[0].type === 'video' ? (
-                                                    <div className="w-10 h-10 rounded-lg bg-black/10 flex items-center justify-center shrink-0">
-                                                        <Icon name="video" size={20} className="text-primary" />
-                                                    </div>
-                                                ) : (
-                                                    <img src={post.media[0].url} className="w-10 h-10 rounded-lg object-cover shrink-0" alt="" />
-                                                )
-                                            )}
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm text-primary truncate">{post.content}</p>
-                                            </div>
-                                        </button>
-                                        {/* 색상 선택 */}
-                                        <div className="flex gap-0.5">
-                                            {MEMO_COLORS.slice(0, 4).map(c => (
-                                                <button
-                                                    key={c}
-                                                    onClick={() => setPostColor(post.id, c)}
-                                                    className={`w-4 h-4 rounded-full transition-transform ${getPostColor(post.id) === c ? 'ring-1 ring-offset-1 ring-gray-400 scale-110' : ''}`}
-                                                    style={{ backgroundColor: c }}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                                {getPostsForDate(selectedDate).length === 0 && (
-                                    <p className="text-center text-secondary text-sm py-3">게시글이 없습니다</p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+                    </>
+                )}
+            </AnimatePresence>
         </>
     );
 };

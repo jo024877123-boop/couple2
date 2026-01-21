@@ -182,8 +182,8 @@ const LoginView = () => {
                                         <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
                                             className="w-full bg-slate-50/50 border border-slate-200 focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-2xl py-3.5 lg:py-4 pl-12 pr-4 outline-none transition-all font-semibold text-slate-700 placeholder:text-slate-400 text-sm lg:text-base"
                                             placeholder="비밀번호" />
-                                        <button type="button" onClick={() => setMode('forgot-password')} className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-indigo-500 hover:text-indigo-700 transition-colors px-2 py-1 rounded-md hover:bg-indigo-50">
-                                            분실?
+                                        <button type="button" onClick={() => setMode('forgot-password')} className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] lg:text-xs font-bold text-sky-500 hover:text-sky-700 transition-colors px-2 py-1 rounded-md hover:bg-sky-50 whitespace-nowrap">
+                                            비밀번호 찾기
                                         </button>
                                     </div>
                                 </div>
