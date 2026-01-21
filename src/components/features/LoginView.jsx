@@ -33,7 +33,6 @@ const LoginView = () => {
         setError(''); setSuccess('');
     };
 
-    // ... (핸들러 함수들은 기존과 동일, 생략 없이 전체 작성)
     const handleLogin = async (e) => {
         e.preventDefault(); setError(''); setLoading(true);
         try {
@@ -75,45 +74,45 @@ const LoginView = () => {
     ];
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 lg:p-0 bg-gray-50 relative overflow-hidden font-sans">
+        <div className="min-h-screen flex items-center justify-center p-0 lg:p-4 bg-gray-50 relative overflow-x-hidden font-sans">
 
-            {/* 1. 배경 애니메이션 (움직이는 Blob) */}
+            {/* 1. 배경 애니메이션 (움직이는 Blob) - 모바일에서는 조금 더 작게 */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
-                <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-purple-300/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob"></div>
-                <div className="absolute top-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-yellow-200/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
-                <div className="absolute bottom-[-20%] left-[20%] w-[50vw] h-[50vw] bg-pink-300/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-4000"></div>
+                <div className="absolute top-[-10%] left-[-10%] w-[80vw] lg:w-[50vw] h-[80vw] lg:h-[50vw] bg-purple-300/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob"></div>
+                <div className="absolute top-[-10%] right-[-10%] w-[80vw] lg:w-[50vw] h-[80vw] lg:h-[50vw] bg-yellow-200/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
+                <div className="absolute bottom-[-20%] left-[20%] w-[80vw] lg:w-[50vw] h-[80vw] lg:h-[50vw] bg-pink-300/30 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-4000"></div>
             </div>
 
-            <div className="w-full max-w-6xl h-auto lg:h-[85vh] bg-white/40 backdrop-blur-xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col lg:flex-row relative z-10 border border-white/50 m-4 lg:m-0">
+            <div className="w-full max-w-6xl min-h-screen lg:min-h-0 lg:h-[85vh] bg-white lg:bg-white/40 backdrop-blur-xl lg:rounded-[2.5rem] shadow-none lg:shadow-2xl overflow-y-auto overflow-x-hidden flex flex-col lg:flex-row relative z-10 lg:border border-white/50">
 
                 {/* Left Side: Dynamic Intro */}
-                <div className="lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-[#6A85B6] to-[#BAC8E0] p-12 text-white flex flex-col justify-between group">
+                <div className="lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-[#6A85B6] to-[#BAC8E0] p-8 lg:p-12 text-white flex flex-col justify-between group shrink-0 min-h-[40vh] lg:min-h-full">
                     {/* Background Image Overlay */}
                     <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?q=80&w=1974&auto=format&fit=crop')] bg-cover bg-center opacity-20 mix-blend-overlay transition-transform duration-[20s] ease-linear group-hover:scale-110" />
 
-                    <div className="relative z-10">
-                        <div className="flex items-center gap-3 mb-12 animate-fadeInDown">
-                            <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center shadow-lg border border-white/10">
-                                <Icon name="heart" fill="white" className="text-white" size={20} />
+                    <div className="relative z-10 mt-auto mb-auto lg:my-0">
+                        <div className="flex items-center gap-3 mb-6 lg:mb-12 animate-fadeInDown">
+                            <div className="w-8 h-8 lg:w-10 lg:h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center shadow-lg border border-white/10">
+                                <Icon name="heart" fill="white" className="text-white" size={16} /> {/* 모바일 사이즈 조정 */}
                             </div>
-                            <span className="font-bold text-lg tracking-widest uppercase text-white/90">Our Story</span>
+                            <span className="font-bold text-sm lg:text-lg tracking-widest uppercase text-white/90">Our Story</span>
                         </div>
 
-                        <h1 className="text-5xl lg:text-6xl font-black mb-6 leading-tight drop-shadow-lg">
+                        <h1 className="text-3xl lg:text-5xl xl:text-6xl font-black mb-4 lg:mb-6 leading-tight drop-shadow-lg break-keep transition-all">
                             {typedText}<span className="animate-blink">|</span><br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-200 to-purple-200">
                                 우리들의 이야기
                             </span>
                         </h1>
-                        <p className="text-lg text-white/90 font-light mb-12 max-w-md leading-relaxed animate-fadeIn" style={{ animationDelay: '1s' }}>
-                            소중한 순간을 영원히 간직하세요.<br />
-                            서로의 일상을 공유하고, 사랑을 키워나가는<br />
+                        <p className="text-sm lg:text-lg text-white/90 font-light mb-8 lg:mb-12 max-w-md leading-relaxed animate-fadeIn break-keep" style={{ animationDelay: '1s' }}>
+                            소중한 순간을 영원히. <br className="lg:hidden" />
+                            서로의 일상을 공유하고 사랑을 키워나가는 <br className="lg:hidden" />
                             가장 로맨틱한 방법입니다.
                         </p>
                     </div>
 
-                    {/* Feature Cards Showcase */}
-                    <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-4 animate-fadeInUp" style={{ animationDelay: '1.5s' }}>
+                    {/* Feature Cards Showcase - 모바일에서는 가로 스크롤 혹은 간소화 */}
+                    <div className="hidden lg:grid relative z-10 grid-cols-1 md:grid-cols-3 gap-4 animate-fadeInUp" style={{ animationDelay: '1.5s' }}>
                         {features.map((f, i) => (
                             <div key={i} className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl hover:bg-white/20 transition-all cursor-default hover:-translate-y-1 duration-300">
                                 <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mb-3">
@@ -124,10 +123,21 @@ const LoginView = () => {
                             </div>
                         ))}
                     </div>
+
+                    {/* 모바일용 심플 피처 (아이콘만) */}
+                    <div className="lg:hidden flex gap-4 animate-fadeInUp justify-center opacity-80" style={{ animationDelay: '1.5s' }}>
+                        {features.map((f, i) => (
+                            <div key={i} className="flex flex-col items-center gap-1">
+                                <div className="p-2 bg-white/20 rounded-full"><Icon name={f.icon} size={16} /></div>
+                                <span className="text-[10px] font-medium">{f.title}</span>
+                            </div>
+                        ))}
+                    </div>
+
                 </div>
 
                 {/* Right Side: Login Form */}
-                <div className="lg:w-1/2 bg-white flex flex-col justify-center p-8 lg:p-16 relative">
+                <div className="lg:w-1/2 bg-white flex flex-col justify-center p-6 lg:p-16 relative rounded-t-[2rem] lg:rounded-t-none -mt-6 lg:mt-0 z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] lg:shadow-none min-h-[60vh]">
                     <div className="max-w-md mx-auto w-full relative z-10">
                         {/* Messages */}
                         {(error || success) && (
@@ -139,15 +149,15 @@ const LoginView = () => {
 
                         {mode === 'login' && (
                             <div className="animate-fadeInRight">
-                                <div className="mb-10">
-                                    <h2 className="text-3xl font-bold text-gray-800 mb-2">반가워요! 👋</h2>
-                                    <p className="text-gray-500">오늘도 소중한 추억을 기록해볼까요?</p>
+                                <div className="mb-8 lg:mb-10 text-center lg:text-left">
+                                    <h2 className="text-2xl lg:text-3xl font-bold text-gray-800 mb-2">반가워요! 👋</h2>
+                                    <p className="text-sm lg:text-base text-gray-500 break-keep">오늘도 소중한 추억을 기록해볼까요?</p>
                                 </div>
-                                <form onSubmit={handleLogin} className="space-y-6">
+                                <form onSubmit={handleLogin} className="space-y-5 lg:space-y-6">
                                     <div className="group">
                                         <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-theme-500 transition-colors">Email Address</label>
                                         <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
-                                            className="w-full bg-gray-50 border-b-2 border-gray-200 focus:border-theme-500 px-4 py-3 outline-none transition-all text-lg font-medium placeholder:text-gray-300 bg-transparent" placeholder="name@example.com" />
+                                            className="w-full bg-gray-50 border-b-2 border-gray-200 focus:border-theme-500 px-4 py-3 outline-none transition-all text-base lg:text-lg font-medium placeholder:text-gray-300 bg-transparent" placeholder="name@example.com" />
                                     </div>
                                     <div className="group">
                                         <div className="flex justify-between items-center mb-2">
@@ -155,11 +165,11 @@ const LoginView = () => {
                                             <button type="button" onClick={() => setMode('forgot-password')} className="text-xs font-bold text-theme-500 hover:text-theme-600">비밀번호 찾기</button>
                                         </div>
                                         <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
-                                            className="w-full bg-gray-50 border-b-2 border-gray-200 focus:border-theme-500 px-4 py-3 outline-none transition-all text-lg font-medium placeholder:text-gray-300 bg-transparent" placeholder="••••••••" />
+                                            className="w-full bg-gray-50 border-b-2 border-gray-200 focus:border-theme-500 px-4 py-3 outline-none transition-all text-base lg:text-lg font-medium placeholder:text-gray-300 bg-transparent" placeholder="••••••••" />
                                     </div>
 
                                     <button type="submit" disabled={loading}
-                                        className="w-full py-4 rounded-2xl bg-gray-900 text-white font-bold text-lg shadow-xl hover:bg-black hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex justify-center items-center gap-2">
+                                        className="w-full py-3.5 lg:py-4 rounded-2xl bg-gray-900 text-white font-bold text-lg shadow-xl hover:bg-black hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex justify-center items-center gap-2">
                                         {loading ? <Icon name="loader" className="animate-spin" /> : <>로그인 <Icon name="arrow-right" size={18} /></>}
                                     </button>
                                 </form>
@@ -171,12 +181,12 @@ const LoginView = () => {
                                         <div className="flex-grow border-t border-gray-100"></div>
                                     </div>
                                     <button onClick={handleGoogleLogin} disabled={loading}
-                                        className="w-full py-3.5 rounded-2xl border-2 border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-all font-bold text-gray-600 flex items-center justify-center gap-2">
+                                        className="w-full py-3.5 rounded-2xl border-2 border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-all font-bold text-gray-600 flex items-center justify-center gap-2 text-sm lg:text-base">
                                         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" className="w-5 h-5" />
                                         Google
                                     </button>
                                     <p className="text-center mt-8 text-sm text-gray-500">
-                                        처음이신가요? <button onClick={() => { resetForm(); setMode('signup'); }} className="text-theme-600 font-bold hover:underline">회원가입</button>
+                                        처음이신가요? <button onClick={() => { resetForm(); setMode('signup'); }} className="text-theme-600 font-bold hover:underline ml-1">회원가입</button>
                                     </p>
                                 </div>
                             </div>
@@ -184,9 +194,9 @@ const LoginView = () => {
 
                         {mode === 'signup' && (
                             <div className="animate-fadeInRight">
-                                <h2 className="text-3xl font-bold text-gray-800 mb-2">회원가입</h2>
-                                <p className="text-gray-500 mb-8">간편하게 시작하세요.</p>
-                                <form onSubmit={handleSignup} className="space-y-4">
+                                <h2 className="text-2xl lg:text-3xl font-bold text-gray-800 mb-2">회원가입</h2>
+                                <p className="text-sm lg:text-base text-gray-500 mb-6 lg:mb-8">간편하게 시작하세요.</p>
+                                <form onSubmit={handleSignup} className="space-y-4 text-sm lg:text-base">
                                     <div className="group">
                                         <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Name</label>
                                         <input type="text" value={name} onChange={e => setName(e.target.value)} required
@@ -218,14 +228,13 @@ const LoginView = () => {
                             </div>
                         )}
 
-                        {/* Forgot PW & Verify Sent 모드는 간단하게 처리 */}
                         {(mode === 'forgot-password' || mode === 'verify-sent') && (
                             <div className="animate-fadeInRight text-center">
-                                <div className="w-20 h-20 bg-theme-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                                    <Icon name={mode === 'verify-sent' ? 'mail-check' : 'key'} size={32} className="text-theme-500" />
+                                <div className="w-16 h-16 lg:w-20 lg:h-20 bg-theme-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                                    <Icon name={mode === 'verify-sent' ? 'mail-check' : 'key'} size={28} className="text-theme-500" />
                                 </div>
-                                <h2 className="text-2xl font-bold mb-2">{mode === 'verify-sent' ? '메일함 확인' : '비밀번호 찾기'}</h2>
-                                <p className="text-gray-500 mb-8 max-w-xs mx-auto">
+                                <h2 className="text-xl lg:text-2xl font-bold mb-2">{mode === 'verify-sent' ? '메일함 확인' : '비밀번호 찾기'}</h2>
+                                <p className="text-sm lg:text-base text-gray-500 mb-8 max-w-xs mx-auto break-keep">
                                     {mode === 'verify-sent' ? `${email}로 인증 메일을 보냈습니다.` : '가입한 이메일을 입력하세요.'}
                                 </p>
 
@@ -244,9 +253,6 @@ const LoginView = () => {
                         )}
 
                     </div>
-                    {/* Decorative Elements */}
-                    <div className="absolute top-10 right-10 w-20 h-20 bg-yellow-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob" />
-                    <div className="absolute bottom-10 left-10 w-20 h-20 bg-purple-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000" />
                 </div>
             </div>
 
@@ -258,7 +264,7 @@ const LoginView = () => {
                     100% { transform: translate(0px, 0px) scale(1); }
                 }
                 .animate-blob {
-                    animation: blob 7s infinite;
+                    animation: blob 10s infinite;
                 }
                 .animation-delay-2000 { animation-delay: 2s; }
                 .animation-delay-4000 { animation-delay: 4s; }

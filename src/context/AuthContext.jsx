@@ -228,44 +228,72 @@ export function AuthProvider({ children }) {
 
     // ========== OBSERVER ==========
     useEffect(() => {
+        // 안전장치: 10초 뒤에는 무조건 로딩 끝냄 (무한 로딩 방지)
+        const safetyTimer = setTimeout(() => {
+            setLoading((prev) => {
+                if (prev) {
+                    console.warn("⚠️ Auth loading timed out. Forcing load completion.");
+                    return false;
+                }
+                return prev;
+            });
+        }, 10000);
+
         const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-            setCurrentUser(user);
-            setLoading(true);
+            try {
+                if (user) {
+                    setCurrentUser(user);
+                    // Fast Fetch for Initial Load
+                    const userRef = doc(db, 'users', user.uid);
+                    const userSnap = await getDoc(userRef);
 
-            if (user) {
-                if (!isAdmin) {
-                    // 1. User Data 구독
-                    const unsubUser = onSnapshot(doc(db, 'users', user.uid), (doc) => {
-                        if (doc.exists()) {
-                            const uData = doc.data();
-                            setUserData({ ...uData, uid: user.uid });
+                    if (userSnap.exists()) {
+                        const uData = { ...userSnap.data(), uid: user.uid };
+                        setUserData(uData);
 
-                            // 2. Couple Data 구독 (coupleId가 있을 때만)
-                            if (uData.coupleId) {
-                                onSnapshot(doc(db, 'couples', uData.coupleId), (cDoc) => {
-                                    if (cDoc.exists()) {
-                                        setCoupleData({ ...cDoc.data(), id: cDoc.id });
-                                    } else {
-                                        // coupleId는 있는데 문서가 없다? (삭제됨)
-                                        setCoupleData(null);
-                                    }
-                                });
-                            } else {
-                                setCoupleData(null);
+                        if (uData.coupleId) {
+                            // Fetch couple data immediately
+                            const coupleSnap = await getDoc(doc(db, 'couples', uData.coupleId));
+                            if (coupleSnap.exists()) {
+                                setCoupleData({ ...coupleSnap.data(), id: coupleSnap.id });
                             }
                         }
-                        setLoading(false);
+                    }
+
+                    // Setup Real-time Listeners (runs in background)
+                    // Note: We don't block loading on listeners to prevent delay
+                    const unsubUser = onSnapshot(userRef, (doc) => {
+                        if (doc.exists()) {
+                            const newData = { ...doc.data(), uid: user.uid };
+                            setUserData(newData);
+                            // If coupleId changed or exists, listen to couple
+                            if (newData.coupleId) {
+                                onSnapshot(doc(db, 'couples', newData.coupleId), (cDoc) => {
+                                    if (cDoc.exists()) setCoupleData({ ...cDoc.data(), id: cDoc.id });
+                                    else setCoupleData(null);
+                                });
+                            }
+                        }
                     });
-                    return () => unsubUser();
+
+                } else {
+                    setCurrentUser(null);
+                    setUserData(null);
+                    setCoupleData(null);
                 }
-            } else {
-                setUserData(null);
-                setCoupleData(null);
+            } catch (err) {
+                console.error("Auth Load Error:", err);
+            } finally {
                 setLoading(false);
+                clearTimeout(safetyTimer);
             }
         });
-        return () => unsubscribeAuth();
-    }, [isAdmin]);
+
+        return () => {
+            unsubscribeAuth();
+            clearTimeout(safetyTimer);
+        };
+    }, []);
 
     // **핵심**: 올바르게 연결된 상태인지 판별
     // coupleData가 존재하고, user1과 user2가 모두 존재해야 함
