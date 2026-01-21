@@ -228,6 +228,7 @@ const App = () => {
     const lastVisitMap = growth.lastVisitByUsers || {}; // { uid: '2024-01-22', ... }
 
     if (lastVisitMap[myUid] === today) {
+      alert('이미 오늘 출석을 완료했습니다! 내일 또 만나요 👋');
       return; // 이미 오늘 출석함
     }
 
@@ -865,6 +866,7 @@ const App = () => {
               {/* 사랑의 나무 위젯 */}
               <GrowthWidget
                 growth={settings.growth}
+                currentUser={userData}
                 onLevelUp={async (nextLevel) => {
                   const newGrowth = { ...settings.growth, level: nextLevel.level };
                   await updateCoupleSettings(userData.coupleId, { growth: newGrowth });

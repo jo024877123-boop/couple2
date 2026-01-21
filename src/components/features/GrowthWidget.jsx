@@ -2,11 +2,24 @@ import React, { useEffect, useState } from 'react';
 import Icon from '../ui/Icon';
 import { LEVELS } from '../../constants';
 
-const GrowthWidget = ({ growth, onLevelUp, onClick, onCheckIn, onShowEnding }) => {
+const GrowthWidget = ({ growth, onLevelUp, onClick, onCheckIn, onShowEnding, currentUser }) => {
     const defaultGrowth = { level: 1, exp: 0 };
     const currentGrowth = growth || defaultGrowth;
-    const today = new Date().toISOString().slice(0, 10);
-    const isCheckedToday = currentGrowth.lastVisit === today;
+    const today = new Date().toISOString().slice(0, 10); // UTC 날짜 (App.jsx와 일치 여부 확인 필요하지만, 일단 UI용)
+
+    // KST 날짜 (App.jsx와 동일한 로직 사용 권장)
+    const getLocalISODate = () => {
+        const d = new Date();
+        const offset = d.getTimezoneOffset() * 60000;
+        return new Date(d.getTime() - offset).toISOString().slice(0, 10);
+    };
+    const localToday = getLocalISODate();
+
+    // 개인별 출석 여부 확인
+    const myUid = currentUser?.uid;
+    const isCheckedToday = myUid
+        ? currentGrowth.lastVisitByUsers?.[myUid] === localToday
+        : currentGrowth.lastVisit === localToday; // Fallback for old version
 
     // 현재 레벨 정보 찾기
     const levelInfo = LEVELS.find(l => l.level === currentGrowth.level) || LEVELS[0];
