@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 // Force redeploy trigger
 import Icon from './components/ui/Icon';
+import { motion, AnimatePresence } from 'framer-motion';
 import { THEMES, MOOD_OPTIONS, SAMPLE_POSTS, MEMO_COLORS } from './constants';
 import './styles/index.css';
 
@@ -1337,29 +1338,29 @@ const App = () => {
       </button>
 
       {/* 기록 추가 모달 */}
-      {
-        isModalOpen && (
-          <Modal onClose={() => { setIsModalOpen(false); resetForm(); }}>
+      <AnimatePresence>
+        {isModalOpen && (
+          <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); resetForm(); }}>
             <ModalHeader title="✨ 오늘의 기억" subtitle="소중한 순간을 기록으로" onClose={() => { setIsModalOpen(false); resetForm(); }} />
             <PostForm post={newPost} setPost={setNewPost} onSubmit={handleAddPost} submitLabel="💕 저장하기" />
           </Modal>
-        )
-      }
+        )}
+      </AnimatePresence>
 
       {/* 수정 모달 */}
-      {
-        editingPost && (
-          <Modal onClose={() => setEditingPost(null)}>
+      <AnimatePresence>
+        {editingPost && (
+          <Modal isOpen={!!editingPost} onClose={() => setEditingPost(null)}>
             <ModalHeader title="✏️ 기록 수정" subtitle="추억을 다시 편집해요" onClose={() => setEditingPost(null)} />
             <PostForm post={editingPost} setPost={setEditingPost} onSubmit={handleEditPost} submitLabel="✅ 수정 완료" />
           </Modal>
-        )
-      }
+        )}
+      </AnimatePresence>
 
       {/* 삭제 확인 */}
-      {
-        deleteConfirm && (
-          <Modal onClose={() => setDeleteConfirm(null)} small>
+      <AnimatePresence>
+        {deleteConfirm && (
+          <Modal isOpen={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} small>
             <div className="text-center py-4">
               <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
                 <Icon name="trash-2" size={28} className="text-red-500" />
@@ -1372,12 +1373,12 @@ const App = () => {
               </div>
             </div>
           </Modal>
-        )
-      }
+        )}
+      </AnimatePresence>
 
       {/* 상세 보기 */}
-      {
-        selectedPost && (
+      <AnimatePresence>
+        {selectedPost && (
           <DetailView
             post={selectedPost}
             settings={settings}
@@ -1388,8 +1389,8 @@ const App = () => {
             onDelete={() => { setDeleteConfirm(selectedPost.id); setSelectedPost(null); }}
             coupleUsers={coupleUsers}
           />
-        )
-      }
+        )}
+      </AnimatePresence>
 
       {/* 내 정보 (프로필) 모달 */}
       {isProfileOpen && (
@@ -1890,9 +1891,9 @@ const App = () => {
         )
       }
       {/* 관리자 모달 (작고 심플하게) */}
-      {
-        isAdminOpen && (
-          <Modal onClose={() => setIsAdminOpen(false)} small>
+      <AnimatePresence>
+        {isAdminOpen && (
+          <Modal isOpen={isAdminOpen} onClose={() => setIsAdminOpen(false)} small>
             <ModalHeader title="🛠️ 관리자 설정" subtitle="앱의 문구를 내 마음대로!" onClose={() => setIsAdminOpen(false)} />
             <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2 scrollbar-hide">
               <div>
@@ -1930,8 +1931,8 @@ const App = () => {
               </div>
             </div>
           </Modal>
-        )
-      }
+        )}
+      </AnimatePresence>
 
       {/* 커플 연결 모달 */}
       {isConnectModalOpen && <ConnectModal onClose={() => setIsConnectModalOpen(false)} />}
@@ -1955,12 +1956,28 @@ const DetailView = ({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, 
   const goPrev = () => setCurrentIndex(prev => (prev - 1 + media.length) % media.length);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4"
+    >
       {/* 배경 */}
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-lg animate-fadeIn" onClick={onClose} />
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="absolute inset-0 bg-black/70 backdrop-blur-lg"
+        onClick={onClose}
+      />
 
       {/* 컨테이너 */}
-      <div className="relative detail-modal w-full max-w-5xl card-bg rounded-[2rem] shadow-2xl overflow-hidden animate-scaleIn">
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        className="relative detail-modal w-full max-w-5xl card-bg rounded-[2rem] shadow-2xl overflow-hidden"
+      >
         {/* 닫기 버튼 */}
         <button onClick={onClose} className="absolute top-4 right-4 z-20 w-10 h-10 bg-black/40 hover:bg-black/60 backdrop-blur rounded-full flex items-center justify-center text-white transition-all btn-bounce">
           <Icon name="x" size={20} />
@@ -2090,24 +2107,43 @@ const DetailView = ({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, 
             )}
           </div>
         </div>
-      </div>
-
+      </motion.div>
       {/* 이미지 확대 뷰 */}
       {zoomImage && <ImageZoom src={zoomImage} onClose={() => setZoomImage(null)} />}
-    </div>
+    </motion.div>
   );
 };
 
 // 서브 컴포넌트들
 const Modal = ({ children, onClose, small = false }) => (
-  <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
-    <div className="absolute inset-0 bg-black/40 backdrop-blur-md animate-fadeIn" onClick={onClose} />
-    <div className={`relative w-full ${small ? 'max-w-sm' : 'max-w-lg'} card-bg rounded-t-[2rem] rounded-b-none sm:rounded-[2rem] shadow-2xl p-6 overflow-y-auto max-h-[85vh] sm:max-h-[90vh] animate-slideUp sm:animate-scaleIn pb-safe`}>
-      {/* Mobile Handle Bar */}
-      <div className="w-12 h-1.5 bg-gray-300/50 rounded-full mx-auto mb-6 sm:hidden" />
-      {children}
+  <>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md"
+      onClick={onClose}
+    />
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none sm:p-4">
+      <motion.div
+        initial={{ y: "100%", opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: "100%", opacity: 0 }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        drag="y"
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.2 }}
+        onDragEnd={(_, info) => {
+          if (info.offset.y > 100) onClose();
+        }}
+        className={`pointer-events-auto relative w-full ${small ? 'max-w-sm' : 'max-w-lg'} card-bg rounded-t-[2rem] rounded-b-none sm:rounded-[2rem] shadow-2xl p-6 overflow-y-auto max-h-[85vh] sm:max-h-[90vh] pb-safe sm:pb-6`}
+      >
+        {/* Mobile Handle Bar */}
+        <div className="w-12 h-1.5 bg-gray-300/50 rounded-full mx-auto mb-6 sm:hidden" />
+        {children}
+      </motion.div>
     </div>
-  </div>
+  </>
 );
 
 const ModalHeader = ({ title, subtitle, onClose }) => (
