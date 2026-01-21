@@ -3,7 +3,7 @@ import Icon from '../ui/Icon';
 import { BALANCE_QUESTIONS, getTodayQuestion } from '../../constants/balanceGame';
 import { ACHIEVEMENTS } from '../../constants';
 
-const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings, isConnected, onRequireConnection }) => {
+const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings, isConnected, onRequireConnection, gameData: serverGameData }) => {
     const [selectedOption, setSelectedOption] = useState(null);
     const [isInputOpen, setIsInputOpen] = useState(false);
     const [comment, setComment] = useState('');
@@ -15,8 +15,8 @@ const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings,
     if (!settings || !settings.coupleName) return null;
 
     const today = new Date().toISOString().slice(0, 10);
-    // gameData가 없으면 빈 객체 ({})
-    const gameData = settings.balanceGameV2 || {};
+    // gameData가 없으면 빈 객체 ({}) - 서버 데이터를 우선 사용
+    const gameData = serverGameData || settings.balanceGameV2 || {};
 
     // 1. 데이터 상태 진단
     const storedDate = gameData.todayDate;
@@ -323,9 +323,10 @@ const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings,
                     </button>
                 )}
 
-                {/* 결과 보기 */}
-                {bothAnswered ? (
+                {/* 결과 보기 (내가 답변했으면 내껀 무조건 보임) */}
+                {hasSubmitted && (
                     <div className="mt-2 space-y-3 animate-fadeIn border-t border-gray-100 pt-4">
+                        {/* 내 답변 */}
                         <div className="bg-white/60 p-3 rounded-xl border border-theme-100">
                             <div className="flex items-center gap-2 mb-2">
                                 <span className="text-xs font-bold bg-theme-100 text-theme-600 px-2 py-0.5 rounded-full">나</span>
@@ -335,20 +336,25 @@ const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings,
                             </div>
                             <p className="text-sm text-gray-800 pl-1 whitespace-pre-wrap">{myAnswerData.comment || "코멘트 없음"}</p>
                         </div>
-                        <div className="bg-white/60 p-3 rounded-xl border border-pink-100">
-                            <div className="flex items-center gap-2 mb-2">
-                                <span className="text-xs font-bold bg-pink-100 text-pink-600 px-2 py-0.5 rounded-full">{partnerUser?.name}</span>
-                                <p className="text-xs text-gray-500 font-medium">
-                                    "{partnerAnswerData.option === 'A' ? todayQuestion.optionA : todayQuestion.optionB}"
-                                </p>
+
+                        {/* 상대방 답변 or 대기중 */}
+                        {bothAnswered ? (
+                            <div className="bg-white/60 p-3 rounded-xl border border-pink-100 animate-slideInUp">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-xs font-bold bg-pink-100 text-pink-600 px-2 py-0.5 rounded-full">{partnerUser?.name}</span>
+                                    <p className="text-xs text-gray-500 font-medium">
+                                        "{partnerAnswerData.option === 'A' ? todayQuestion.optionA : todayQuestion.optionB}"
+                                    </p>
+                                </div>
+                                <p className="text-sm text-gray-800 pl-1 whitespace-pre-wrap">{partnerAnswerData.comment || "코멘트 없음"}</p>
                             </div>
-                            <p className="text-sm text-gray-800 pl-1 whitespace-pre-wrap">{partnerAnswerData.comment || "코멘트 없음"}</p>
-                        </div>
-                    </div>
-                ) : hasSubmitted && (
-                    <div className="text-center p-3 bg-gray-50 rounded-xl mt-3">
-                        <p className="text-xs text-gray-500 animate-pulse">상대방의 선택을 기다리는 중...</p>
-                        <p className="text-[10px] text-gray-400 mt-1">00시가 지나면 새로운 질문으로 바뀝니다.</p>
+                        ) : (
+                            <div className="text-center p-3 bg-gray-50 rounded-xl mt-3 flex flex-col items-center gap-2">
+                                <div className="animate-spin text-xl">⏳</div>
+                                <p className="text-xs text-gray-500">상대방의 선택을 기다리는 중...</p>
+                                <p className="text-[10px] text-gray-400">00시가 지나면 새로운 질문으로 바뀝니다.</p>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

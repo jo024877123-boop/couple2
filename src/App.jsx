@@ -860,6 +860,7 @@ const App = () => {
               {!loading && (
                 <BalanceGameCard
                   settings={settings}
+                  gameData={coupleData?.balanceGameV2 || {}} // 서버 실시간 데이터 직접 주입
                   coupleUsers={coupleUsers}
                   currentUser={userData}
                   isConnected={isConnected}
