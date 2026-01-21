@@ -9,6 +9,7 @@ const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings,
     const [comment, setComment] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [timeLeft, setTimeLeft] = useState('');
+    const [localSubmitted, setLocalSubmitted] = useState(false); // 즉시 반영용 로컬 상태
 
     // 설정이 아직 로드되지 않았으면 렌더링 보류
     if (!settings || !settings.coupleName) return null;
@@ -170,6 +171,17 @@ const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings,
 
     const handleFinalSubmit = async () => {
         if (isSubmitting) return;
+
+        // 이미 참여했는지 더블 체크 (DB 데이터 + 로컬 상태)
+        const dbAnswer = gameData.todayAnswers?.[currentUser.uid];
+        if (dbAnswer || localSubmitted) {
+            // 이미 참여했다면 코멘트 수정만 가능하거나, 아예 리턴해야 함.
+            // 사용자가 "변경 불가능"을 원했으므로 리턴.
+            alert("이미 답변을 완료하셨습니다. (수정 불가)");
+            setIsInputOpen(false);
+            return;
+        }
+
         setIsSubmitting(true);
 
         try {
@@ -178,38 +190,31 @@ const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings,
                 [currentUser.uid]: { option: selectedOption, comment: comment.trim() }
             };
 
-            const alreadyParticipated = !!gameData.todayAnswers?.[currentUser.uid];
-
             let updates = { balanceGameV2: { ...gameData, todayAnswers: newAnswers } };
 
             // 첫 참여 시에만 XP/업적
-            if (!alreadyParticipated) {
-                const currentStats = settings.gameStats || { balanceCount: 0 };
-                const newCount = (currentStats.balanceCount || 0) + 1;
-                const newStats = { ...currentStats, balanceCount: newCount };
+            const currentStats = settings.gameStats || { balanceCount: 0 };
+            const newCount = (currentStats.balanceCount || 0) + 1;
+            const newStats = { ...currentStats, balanceCount: newCount };
 
-                const currentGrowth = settings.growth || { level: 1, exp: 0, achievements: [] };
-                let newExp = (currentGrowth.exp || 0) + 10;
-                let newAchievements = [...(currentGrowth.achievements || [])];
-                let alertMessage = "✅ 답변이 저장되었습니다! (+10 XP)";
+            const currentGrowth = settings.growth || { level: 1, exp: 0, achievements: [] };
+            let newExp = (currentGrowth.exp || 0) + 10;
+            let newAchievements = [...(currentGrowth.achievements || [])];
+            let alertMessage = "✅ 답변이 저장되었습니다! (+10 XP)";
 
-                const unlockedAchievements = ACHIEVEMENTS.filter(a =>
-                    a.type === 'balance' && newCount >= a.target && !newAchievements.includes(a.id)
-                );
+            const unlockedAchievements = ACHIEVEMENTS.filter(a =>
+                a.type === 'balance' && newCount >= a.target && !newAchievements.includes(a.id)
+            );
 
-                if (unlockedAchievements.length > 0) {
-                    unlockedAchievements.forEach(ach => {
-                        newAchievements.push(ach.id);
-                        newExp += ach.reward;
-                        alertMessage += `\n🏆 업적 달성: ${ach.title} (+${ach.reward} XP)`;
-                    });
-                }
-                updates.growth = { ...currentGrowth, exp: newExp, achievements: newAchievements };
-                updates.gameStats = newStats;
-                alert(alertMessage);
-            } else {
-                alert("✅ 답변이 위트있게 수정되었습니다!");
+            if (unlockedAchievements.length > 0) {
+                unlockedAchievements.forEach(ach => {
+                    newAchievements.push(ach.id);
+                    newExp += ach.reward;
+                    alertMessage += `\n🏆 업적 달성: ${ach.title} (+${ach.reward} XP)`;
+                });
             }
+            updates.growth = { ...currentGrowth, exp: newExp, achievements: newAchievements };
+            updates.gameStats = newStats;
 
             // 둘 다 답변했으면 completedIds에 영구 추가
             // (혹시 오늘 처음 둘 다 완료한거라면)
@@ -221,6 +226,8 @@ const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings,
             }
 
             await onUpdateSettings(updates);
+            setLocalSubmitted(true); // 즉시 잠금
+            alert(alertMessage);
             setIsInputOpen(false);
 
         } catch (error) {
@@ -292,23 +299,24 @@ const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings,
                 </div>
 
                 {/* 버튼 영역 */}
-                {selectedOption && (
+                {(selectedOption) && (
                     <button
                         onClick={handleConfirmClick}
-                        className={`w-full mb-3 py-3 rounded-xl font-bold shadow-lg hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 animate-fadeInUp
-                            ${hasSubmitted && selectedOption === myAnswerData?.option
-                                ? 'bg-white border-2 border-theme-100 text-theme-500' // 수정 버튼 스타일
-                                : 'bg-gradient-to-r from-theme-500 to-pink-500 text-white' // 확정/변경 버튼 스타일
+                        disabled={hasSubmitted || localSubmitted}
+                        className={`w-full mb-3 py-3 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 animate-fadeInUp
+                            ${hasSubmitted || localSubmitted
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-2 border-gray-200 shadow-none'
+                                : 'bg-gradient-to-r from-theme-500 to-pink-500 text-white hover:opacity-90 active:scale-95'
                             }
                         `}
                     >
-                        {hasSubmitted && selectedOption === myAnswerData?.option ? (
+                        {hasSubmitted || localSubmitted ? (
                             <>
-                                <Icon name="edit-3" size={16} /> 내용 수정하기
+                                <Icon name="check-circle" size={16} /> 참여 완료 (수정 불가)
                             </>
                         ) : (
                             <>
-                                <span>{hasSubmitted ? '이걸로 변경하기' : '이걸로 확정하기'}</span>
+                                <span>이걸로 확정하기</span>
                                 <Icon name="arrow-right" size={16} />
                             </>
                         )}

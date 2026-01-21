@@ -97,9 +97,13 @@ const Logo = ({ size = 40, className = "" }) => (
 );
 
 const App = () => {
-  const { currentUser, userData, logout, connectWithCode, generateInviteCode, disconnectCouple, isAdmin, setUserData, isCoupleConnected, coupleData, loading } = useAuth();
+  const { currentUser, userData, logout, connectWithCode, createMyCoupleSpace, disconnectCouple, isAdmin, setUserData, isCoupleConnected, coupleData, loading } = useAuth();
   const [adminViewTarget, setAdminViewTarget] = useState(null); // Couple ID to monitor
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false); // Modal control for connection
+
+  // Connection States
+  const [generatedCode, setGeneratedCode] = useState(null);
+  const [connectCodeInput, setConnectCodeInput] = useState('');
 
   // Settings State (Default values with LocalStorage Fallback)
   const [settings, setSettings] = useState(() => {
@@ -754,7 +758,7 @@ const App = () => {
       {/* 메인 */}
       <main {...bind()} className={`${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-72'} min-h-screen transition-all duration-300 touch-pan-y`}>
         {/* 연결 유도 위젯 */}
-        {!isCoupleConnected && <ConnectWidget onClick={() => setIsConnectModalOpen(true)} />}
+        {!isCoupleConnected && <ConnectWidget onClick={() => setIsSettingsOpen(true)} />}
         {/* 데스크탑 탑바 (Floating Style with Scroll Effect) */}
         <div className={`hidden lg:flex sticky top-6 z-20 mx-6 mb-6 px-6 ${isScrolled ? 'py-2.5 scale-[0.98] bg-white/60 shadow-md backdrop-blur-2xl' : 'py-4 bg-white/40 shadow-sm backdrop-blur-md'} rounded-2xl border border-white/20 items-center justify-between transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:shadow-lg hover:scale-[0.99]`}>
           <div className="flex items-center gap-3">
@@ -1617,6 +1621,65 @@ const App = () => {
                     </button>
                   </div>
                 )}
+              </div>
+
+              <div className="border-t border-gray-100 my-4 pt-4">
+                {/* 커플 연결 섹션 (미연결 시에만 표시) */}
+                {!isCoupleConnected && (
+                  <div className="mb-6 p-5 bg-purple-50 rounded-2xl border border-purple-100 animate-fadeIn">
+                    <h3 className="font-bold text-purple-700 mb-3 flex items-center gap-2">
+                      <Icon name="link" size={18} /> 커플 연결
+                    </h3>
+
+                    {/* 1. 코드 생성 */}
+                    <div className="mb-5">
+                      <p className="text-xs text-gray-500 mb-2 font-medium">상대방에게 공유할 코드를 만드세요</p>
+                      {generatedCode || coupleData?.inviteCode ? (
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 bg-white p-3 rounded-xl border border-purple-200 text-center font-black tracking-widest text-lg text-purple-600 shadow-sm">
+                            {generatedCode || coupleData.inviteCode}
+                          </div>
+                          <button onClick={(e) => { e.preventDefault(); navigator.clipboard.writeText(generatedCode || coupleData.inviteCode); alert("복사완료!"); }} className="p-3 bg-white border border-purple-200 text-purple-600 rounded-xl hover:bg-purple-100 transition-colors shadow-sm">
+                            <Icon name="copy" size={20} />
+                          </button>
+                        </div>
+                      ) : (
+                        <button onClick={async (e) => {
+                          e.preventDefault();
+                          try {
+                            const res = await createMyCoupleSpace();
+                            if (res && res.inviteCode) setGeneratedCode(res.inviteCode);
+                          } catch (err) { alert("생성 실패: " + err.message); }
+                        }} className="w-full py-3 bg-white border border-purple-200 text-purple-600 font-bold rounded-xl hover:bg-purple-50 transition-colors shadow-sm flex items-center justify-center gap-2">
+                          <Icon name="plus" size={16} /> 초대 코드 발급받기
+                        </button>
+                      )}
+                    </div>
+
+                    {/* 2. 코드 입력 */}
+                    <div>
+                      <p className="text-xs text-gray-500 mb-2 font-medium">상대방의 코드를 받으셨나요?</p>
+                      <div className="flex gap-2">
+                        <input type="text" placeholder="코드 6자리" value={connectCodeInput} onChange={e => setConnectCodeInput(e.target.value)} maxLength={6} className="flex-1 px-4 py-3 rounded-xl border border-purple-200 focus:ring-2 focus:ring-purple-200 outline-none text-center font-bold tracking-widest uppercase" />
+                        <button onClick={async (e) => {
+                          e.preventDefault();
+                          try {
+                            await connectWithCode(connectCodeInput);
+                            alert("연결 성공! 환영합니다 💕");
+                            setIsSettingsOpen(false);
+                            window.location.reload();
+                          } catch (err) {
+                            alert("연결 실패: " + err.message);
+                          }
+                        }} className="px-6 bg-purple-500 text-white font-bold rounded-xl hover:bg-purple-600 transition-colors shadow-md btn-bounce">
+                          연결
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 기존 입력 필드들 */}
               </div>
 
               <InputField label="우리 이름" value={settings.coupleName} onChange={v => setSettings({ ...settings, coupleName: v })} placeholder="예: 우진 & 유나" />
