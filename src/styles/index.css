@@ -31,10 +31,12 @@
   --primary-500: #64748b;
   --primary-600: #475569;
   --primary-700: #334155;
-  --bg-gradient-from: #ffffff;
+  --bg-gradient-from: #f8fafc;
   --bg-gradient-to: #f1f5f9;
   --glass-bg: rgba(255, 255, 255, 0.9);
-  --glass-border: rgba(0, 0, 0, 0.06);
+  --glass-border: rgba(0, 0, 0, 0.05);
+  --card-bg: #ffffff;
+  --card-border: #e2e8f0;
   --text-primary: #0f172a;
   --text-secondary: #475569;
   --btn-text: #ffffff;
@@ -225,8 +227,8 @@ main {
 .card-bg {
   background: var(--card-bg);
   backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.02), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.6));
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
   transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
