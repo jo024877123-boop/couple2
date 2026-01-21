@@ -67,6 +67,30 @@ const LoginView = () => {
         try { await resetPassword(email); setSuccess('이메일을 발송했습니다!'); setTimeout(() => { setMode('login'); setSuccess(''); }, 5000); } catch (err) { setError('이메일을 확인해주세요.'); } finally { setLoading(false); }
     };
 
+    // ==========================================
+    // 🛡️ 인앱 브라우저 감지 및 대응
+    // ==========================================
+    const [showInAppAlert, setShowInAppAlert] = useState(false);
+
+    useEffect(() => {
+        const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+        // 카카오톡, 인스타그램, 페이스북, 네이버, 라인 등 인앱 브라우저 식별 문자열
+        const isInApp = /KAKAOTALK|Instagram|NAVER|ZuukTalk|Snapchat|Line|Everytime|Twitter|Whale/i.test(userAgent);
+
+        if (isInApp) {
+            // Android: Chrome으로 강제 이동 시도
+            if (/android/i.test(userAgent)) {
+                // 현재 페이지 URL
+                const currentUrl = window.location.href.replace(/^https?:\/\//i, '');
+                // Intent 스키마를 이용해 Chrome 호출
+                window.location.href = `intent://${currentUrl}#Intent;scheme=https;package=com.android.chrome;end`;
+            } else {
+                // iOS: 강제 이동 불가 -> 안내 모달 표시
+                setShowInAppAlert(true);
+            }
+        }
+    }, []);
+
     const features = [
         { icon: 'book-open', title: '추억 기록', desc: '사진과 함께 타임라인' },
         { icon: 'scale', title: '밸런스 게임', desc: '매일 새로운 질문' },
@@ -285,6 +309,42 @@ const LoginView = () => {
                     )}
                 </div>
             </div>
+
+            {/* 🛡️ 인앱 브라우저 경고 모달 (iOS용) */}
+            {showInAppAlert && (
+                <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-lg flex flex-col items-center justify-center p-6 text-white text-center">
+                    <div className="animate-bounce mb-8">
+                        <Icon name="arrow-up-right" size={48} className="text-yellow-400 rotate-45" />
+                    </div>
+
+                    <h2 className="text-2xl font-bold mb-4 leading-normal">
+                        더 원활한 사용을 위해<br />
+                        <span className="text-yellow-400">Safari</span>로 열어주세요!
+                    </h2>
+
+                    <p className="text-white/80 mb-8 leading-relaxed max-w-xs mx-auto text-sm">
+                        현재 브라우저 보안 정책으로 인해<br />
+                        로그인이 제한될 수 있습니다.<br /><br />
+                        오른쪽 하단(또는 상단)의 <span className="inline-block p-1 bg-gray-700 rounded mx-1"><Icon name="more-horizontal" size={12} className="inline" /></span> 버튼을 누르고<br />
+                        <span className="font-bold text-white bg-blue-500 px-2 py-0.5 rounded mx-1">Safari로 열기</span>를 선택해주세요.
+                    </p>
+
+                    <button
+                        onClick={() => setShowInAppAlert(false)}
+                        className="text-white/50 text-xs underline mt-4"
+                    >
+                        안내 닫기 (로그인 시도해보기)
+                    </button>
+
+                    {/* 상단 화살표 가이드 (절대적 위치 시도) */}
+                    <div className="absolute top-4 right-6 animate-pulse text-yellow-400">
+                        <Icon name="arrow-up" size={32} />
+                    </div>
+                    <div className="absolute bottom-6 right-6 animate-pulse text-yellow-400">
+                        <Icon name="arrow-down" size={32} />
+                    </div>
+                </div>
+            )}
 
             <style jsx>{`
                 @keyframes blob {
