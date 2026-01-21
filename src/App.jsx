@@ -15,7 +15,8 @@ import BottomSheet from './components/ui/BottomSheet';
 import InstallGuide from './components/ui/InstallGuide';
 import LoginView from './components/features/LoginView'; // Login View
 import OnboardingView from './components/features/OnboardingView'; // Onboarding
-import ConnectView from './components/features/ConnectView'; // Connect View
+import ConnectModal from './components/features/ConnectView'; // Connect Modal (Was View)
+import ConnectWidget from './components/features/ConnectWidget'; // Connect Widget
 import AdminDashboard from './components/features/AdminDashboard'; // Admin Dashboard
 import GrowthWidget from './components/features/GrowthWidget'; // Growth Widget
 import AchievementModal from './components/features/AchievementModal'; // Achievement Modal
@@ -98,6 +99,7 @@ const Logo = ({ size = 40, className = "" }) => (
 const App = () => {
   const { currentUser, userData, logout, connectWithCode, generateInviteCode, disconnectCouple, isAdmin, setUserData, isCoupleConnected } = useAuth();
   const [adminViewTarget, setAdminViewTarget] = useState(null); // Couple ID to monitor
+  const [isConnectModalOpen, setIsConnectModalOpen] = useState(false); // Modal control for connection
 
   // Settings State (Default values with LocalStorage Fallback)
   const [settings, setSettings] = useState(() => {
@@ -141,7 +143,14 @@ const App = () => {
   };
 
   // Wrap interactions without sound
-  const handleModalOpen = () => { setIsModalOpen(true); };
+  // Wrap interactions without sound
+  const handleModalOpen = () => {
+    if (!isCoupleConnected) {
+      setIsConnectModalOpen(true);
+    } else {
+      setIsModalOpen(true);
+    }
+  };
   const handleThemePicker = () => { setIsThemePickerOpen(true); };
   const handleSettingsOpen = () => { setIsSettingsOpen(true); };
 
@@ -414,15 +423,9 @@ const App = () => {
   // Login Check
   if (!currentUser) return <LoginView />;
 
-  // Onboarding Check (Only if connected or explicit bypass needed? Actually Onboarding usually comes AFTER connection)
-  // Let's decide: Connect -> Onboarding -> App
-  // If not connected, show ConnectView
-  if (!isCoupleConnected && !isAdmin && !adminViewTarget) {
-    return <ConnectView />;
-  }
-
+  // Onboarding Check (Only if connected? let's allow bypassing for now or show after connection)
   // If connected but onboarding not done
-  if (!isAdmin && !userData?.onboardingCompleted) {
+  if (isCoupleConnected && !isAdmin && !userData?.onboardingCompleted) {
     return <OnboardingView userData={userData} coupleId={userData.coupleId} userId={currentUser.uid} onComplete={() => setUserData({ ...userData, onboardingCompleted: true })} />;
   }
 
@@ -474,7 +477,8 @@ const App = () => {
 
     // 1. Check Connection
     if (!isConnected) {
-      alert("⚠️ 커플 연결이 되어있지 않습니다.\n설정에서 파트너와 연결 후 작성해주세요.");
+      alert("⚠️ 커플 연결이 필요합니다.\n상대방과 연결하여 추억을 기록해보세요!");
+      setIsConnectModalOpen(true);
       return;
     }
 
@@ -742,6 +746,8 @@ const App = () => {
 
       {/* 메인 */}
       <main {...bind()} className={`${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-72'} min-h-screen transition-all duration-300 touch-pan-y`}>
+        {/* 연결 유도 위젯 */}
+        {!isCoupleConnected && <ConnectWidget onClick={() => setIsConnectModalOpen(true)} />}
         {/* 데스크탑 탑바 (Floating Style with Scroll Effect) */}
         <div className={`hidden lg:flex sticky top-6 z-20 mx-6 mb-6 px-6 ${isScrolled ? 'py-2.5 scale-[0.98] bg-white/60 shadow-md backdrop-blur-2xl' : 'py-4 bg-white/40 shadow-sm backdrop-blur-md'} rounded-2xl border border-white/20 items-center justify-between transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:shadow-lg hover:scale-[0.99]`}>
           <div className="flex items-center gap-3">
@@ -843,6 +849,8 @@ const App = () => {
                 settings={settings}
                 coupleUsers={coupleUsers}
                 currentUser={userData}
+                isConnected={isConnected}
+                onRequireConnection={() => setIsConnectModalOpen(true)}
                 onUpdateSettings={async (updates) => {
                   await updateCoupleSettings(userData.coupleId, updates);
                   setSettings(prev => ({ ...prev, ...updates }));
@@ -1874,6 +1882,9 @@ const App = () => {
           </div>
         </Modal>
       )}
+
+      {/* 커플 연결 모달 */}
+      {isConnectModalOpen && <ConnectModal onClose={() => setIsConnectModalOpen(false)} />}
 
       {/* Guide Modal */}
       {isInstallGuideOpen && <InstallGuide onClose={() => setIsInstallGuideOpen(false)} platform={isIos ? 'ios' : 'android'} />}

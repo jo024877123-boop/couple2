@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Icon from '../ui/Icon';
 
-const ConnectView = () => {
+const ConnectModal = ({ onClose }) => {
     const { currentUser, userData, coupleData, createMyCoupleSpace, connectWithCode, logout } = useAuth();
     const [mode, setMode] = useState('select'); // 'select', 'create', 'enter'
     const [inputCode, setInputCode] = useState('');
@@ -33,6 +33,7 @@ const ConnectView = () => {
         setLoading(true);
         try {
             await connectWithCode(inputCode);
+            onClose(); // 성공 시 닫기
             // 성공하면 AuthContext 상태가 변하면서 자동으로 Main으로 이동됨
         } catch (err) {
             setError(err.message);
@@ -46,10 +47,23 @@ const ConnectView = () => {
         alert("코드가 복사되었습니다! 연인에게 전송하세요 💌");
     };
 
+    // 공통 모달 래퍼
+    const ModalWrapper = ({ children }) => (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+            <div className="bg-white w-full max-w-md p-8 rounded-[2.5rem] shadow-2xl relative z-10 animate-scaleIn max-h-[90vh] overflow-y-auto">
+                <button onClick={onClose} className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 p-2">
+                    <Icon name="x" size={24} />
+                </button>
+                {children}
+            </div>
+        </div>
+    );
+
     if (isWaiting || mode === 'create') {
         return (
-            <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
-                <div className="bg-white w-full max-w-md p-8 rounded-[2.5rem] shadow-2xl text-center animate-scaleIn">
+            <ModalWrapper>
+                <div className="text-center">
                     <div className="w-20 h-20 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
                         <Icon name="heart" size={40} className="text-pink-500" />
                     </div>
@@ -81,20 +95,20 @@ const ConnectView = () => {
                         로그아웃 / 처음으로
                     </button>
                 </div>
-            </div>
+            </ModalWrapper>
         );
     }
 
     if (mode === 'enter') {
         return (
-            <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
-                <div className="bg-white w-full max-w-md p-8 rounded-[2.5rem] shadow-2xl animate-scaleIn">
-                    <button onClick={() => setMode('select')} className="mb-6 text-gray-400 hover:text-gray-600">
-                        <Icon name="arrow-left" size={24} />
+            <ModalWrapper>
+                <div>
+                    <button onClick={() => setMode('select')} className="mb-4 text-gray-400 hover:text-gray-600 flex items-center gap-1">
+                        <Icon name="arrow-left" size={18} /> 이전
                     </button>
 
                     <h2 className="text-2xl font-bold text-gray-800 mb-2 text-center">코드 입력</h2>
-                    <p className="text-gray-500 mb-8 text-center">연인에게 받은 코드를 입력해주세요.</p>
+                    <p className="text-gray-500 mb-8 text-center">연인에게 받은 6자리 코드를 입력해주세요.</p>
 
                     <form onSubmit={handleConnect} className="space-y-6">
                         <div>
@@ -102,8 +116,8 @@ const ConnectView = () => {
                                 type="text"
                                 value={inputCode}
                                 onChange={(e) => setInputCode(e.target.value)}
-                                placeholder="6자리 숫자 코드"
-                                className="w-full text-center text-3xl font-bold tracking-widest py-4 border-b-2 border-gray-200 focus:border-theme-500 outline-none bg-transparent placeholder:text-gray-200 placeholder:text-2xl placeholder:font-normal placeholder:tracking-normal"
+                                placeholder="000000"
+                                className="w-full text-center text-3xl font-black tracking-[0.5em] py-4 border-b-2 border-gray-200 focus:border-theme-500 outline-none bg-transparent placeholder:text-gray-200"
                                 maxLength={6}
                                 autoFocus
                             />
@@ -124,19 +138,19 @@ const ConnectView = () => {
                         </button>
                     </form>
                 </div>
-            </div>
+            </ModalWrapper>
         );
     }
 
     // Default: Select Mode
     return (
-        <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
-            <div className="bg-white w-full max-w-md p-8 rounded-[2.5rem] shadow-2xl text-center animate-scaleIn">
+        <ModalWrapper>
+            <div className="text-center">
                 <div className="mb-8">
                     <h1 className="text-3xl font-black text-gray-900 mb-2">커플 연결 🔗</h1>
                     <p className="text-gray-500">
                         아직 연결된 연인이 없어요.<br />
-                        어떻게 연결할까요?
+                        연결하면 모든 기능을 사용할 수 있습니다!
                     </p>
                 </div>
 
@@ -173,8 +187,8 @@ const ConnectView = () => {
                     </button>
                 </div>
             </div>
-        </div>
+        </ModalWrapper>
     );
 };
 
-export default ConnectView;
+export default ConnectModal;
