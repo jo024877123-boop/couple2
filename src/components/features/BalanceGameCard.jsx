@@ -4,72 +4,75 @@ import { BALANCE_QUESTIONS, getTodayQuestion } from '../../constants/balanceGame
 import { ACHIEVEMENTS } from '../../constants';
 
 const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings }) => {
-    const [selectedOption, setSelectedOption] = useState(null);
-    const [comment, setComment] = useState('');
+    const [selectedOption, setSelectedOption] = useState(null); // 'A' or 'B' (임시 선택)
+    const [isInputOpen, setIsInputOpen] = useState(false); // 이유 입력 모달 상태
+    const [comment, setComment] = useState(''); // 입력된 이유
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const today = new Date().toISOString().slice(0, 10);
 
-    // 게임 데이터 가져오기
-    const gameData = settings.balanceGame || { completedIds: [], todayAnswers: {}, todayDate: '' };
+    // V2로 변경하여 강제 초기화 효과
+    const gameData = settings.balanceGameV2 || { completedIds: [], todayAnswers: {}, todayDate: '' };
 
-    // 오늘 날짜가 변경되면 todayAnswers 초기화 (00시 초기화 로직)
+    // 오늘 날짜가 변경되면 todayAnswers 초기화
     const isNewDay = gameData.todayDate !== today;
     const completedIds = isNewDay ? (gameData.completedIds || []) : (gameData.completedIds || []);
     const todayAnswers = isNewDay ? {} : (gameData.todayAnswers || {});
 
-    // 오늘의 질문 가져오기
+    // 오늘의 질문
     const todayQuestion = getTodayQuestion(completedIds);
 
-    // 내 답변 / 상대방 답변 (데이터 구조: { option: 'A', comment: '...' })
-    // 하위 호환성: 문자열이면 객체로 변환
+    // 사용자 데이터 가져오기 helper
     const getAnswerData = (uid) => {
         const data = todayAnswers[uid];
         if (!data) return null;
-        if (typeof data === 'string') return { option: data, comment: '' };
-        return data;
+        return data; // { option: 'A', comment: '...' }
     };
 
     const myAnswerData = getAnswerData(currentUser?.uid);
     const partnerUser = coupleUsers.find(u => u.uid !== currentUser?.uid);
     const partnerAnswerData = partnerUser ? getAnswerData(partnerUser.uid) : null;
 
-    // 확정된 답변이 있는지
-    const myConfirmedAnswer = myAnswerData?.option;
+    // 이미 최종 제출했는지 확인
+    const hasSubmitted = !!myAnswerData;
 
-    // 둘 다 답변했는지
-    const bothAnswered = myConfirmedAnswer && partnerAnswerData?.option;
-    const isMatch = bothAnswered && myConfirmedAnswer === partnerAnswerData?.option;
+    // 둘 다 제출했는지 (결과 공개 여부)
+    const bothAnswered = hasSubmitted && !!partnerAnswerData;
+    const isMatch = bothAnswered && myAnswerData.option === partnerAnswerData.option;
 
-    // 선택 핸들러 (확정 전)
-    const handleSelect = (option) => {
-        if (myConfirmedAnswer) return; // 이미 확정했으면 수정 불가
+    // 1. 선택지 클릭 핸들러
+    const handleOptionClick = (option) => {
+        if (hasSubmitted) return;
         setSelectedOption(option);
     };
 
-    // 답변 제출 (확정)
-    const handleSubmit = async () => {
-        if (!selectedOption || isSubmitting) return;
+    // 2. 확정 버튼 클릭 -> 모달 오픈
+    const handleConfirmClick = () => {
+        if (!selectedOption) return;
+        setIsInputOpen(true);
+    };
+
+    // 3. 모달에서 저장 버튼 클릭 -> 최종 제출
+    const handleFinalSubmit = async () => {
+        if (isSubmitting) return;
         setIsSubmitting(true);
 
         try {
-            // 1. 답변 저장
+            // 답변 데이터 구성
             const newAnswers = {
                 ...todayAnswers,
                 [currentUser.uid]: { option: selectedOption, comment: comment.trim() }
             };
 
-            // 2. XP 보상 및 통계 업데이트
-            // 밸런스 게임 참여 횟수 증가 (업적용)
+            // 통계 및 XP (업적 체크용)
             const currentStats = settings.gameStats || { balanceCount: 0 };
             const newCount = (currentStats.balanceCount || 0) + 1;
             const newStats = { ...currentStats, balanceCount: newCount };
 
-            // XP 지급
             const currentGrowth = settings.growth || { level: 1, exp: 0, achievements: [] };
             let newExp = (currentGrowth.exp || 0) + 10;
             let newAchievements = [...(currentGrowth.achievements || [])];
-            let alertMessage = "✅ 답변이 등록되었습니다! (+10 XP)";
+            let alertMessage = "✅ 답변이 저장되었습니다! (+10 XP)";
 
             // 업적 달성 체크
             const unlockedAchievements = ACHIEVEMENTS.filter(a =>
@@ -92,183 +95,209 @@ const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings 
                 achievements: newAchievements
             };
 
-            // 3. 게임 데이터 업데이트
+            // 데이터 업데이트
             const newGameData = {
                 ...gameData,
                 todayDate: today,
                 todayAnswers: newAnswers,
-                // 둘 다 답변하면 completedIds에 추가 (중복 방지)
-                completedIds: (partnerAnswerData && partnerAnswerData.option)
+                // 둘 다 답변했으면 완료 목록에 추가
+                completedIds: (partnerAnswerData)
                     ? [...completedIds, todayQuestion.id]
                     : completedIds
             };
 
             await onUpdateSettings({
-                balanceGame: newGameData,
+                balanceGameV2: newGameData, // V2 키 사용
                 growth: newGrowth,
                 gameStats: newStats
             });
 
+            setIsInputOpen(false);
             alert(alertMessage);
+
         } catch (error) {
-            console.error("Failed to submit balance game answer:", error);
-            alert("저장에 실패했습니다. 다시 시도해주세요.");
+            console.error("Failed to submit:", error);
+            alert("저장에 실패했습니다.");
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    // 둘 다 답변 완료 시 completedIds 업데이트 (상대방이 나중에 했을 때를 위해)
-    // 단, 내 쪽에서 이미 처리했으면 패스. 이 useEffect는 주로 실시간 업데이트 동기화를 위함.
+    // 상대방이 나중에 답변했을 때 실시간 업데이트 처리
     useEffect(() => {
         if (bothAnswered && !completedIds.includes(todayQuestion.id)) {
-            // 로컬 상태와 DB 상태 불일치 방지 위해 한번 더 체크하고 업데이트는 생략하거나 신중히 해야 함.
-            // 여기서는 handleSubmit에서 이미 처리하므로, 상대방 로직에 의존하거나
-            // 간단히 렌더링 시점에 completedIds가 업데이트되지 않았을 때를 대비함.
-            // 하지만 무한 루프 위험이 있으므로, handleSubmit에서 처리하는 것을 원칙으로 함.
+            // 이 부분은 실시간 동기화 시 자동으로 처리되거나,
+            // 다음날 접속 시 completedIds가 갱신되어 있을 것임.
+            // 굳이 여기서 강제 업데이트 안 해도 됨 (무한 루프 방지)
         }
     }, [bothAnswered]);
 
     return (
-        <div className="card-bg rounded-2xl p-5 border border-theme-100 mb-6 bg-gradient-to-br from-purple-50 to-pink-50 shadow-sm relative overflow-hidden">
-            {/* 배경 장식 */}
-            <div className="absolute top-0 right-0 p-3 opacity-10">
-                <Icon name="scale" size={60} className="text-purple-500" />
-            </div>
-
-            {/* 헤더 */}
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                    <span className="text-2xl">⚖️</span>
-                    <div>
-                        <h3 className="font-bold text-primary text-sm">오늘의 밸런스 게임</h3>
-                        <p className="text-[10px] text-secondary">{todayQuestion.category} • #{completedIds.length + 1}번째 질문</p>
+        <>
+            <div className="card-bg rounded-2xl p-5 border border-theme-100 mb-6 bg-gradient-to-br from-purple-50 to-pink-50 shadow-sm relative overflow-hidden">
+                {/* 헤더 */}
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                        <span className="text-2xl">⚖️</span>
+                        <div>
+                            <h3 className="font-bold text-primary text-sm">오늘의 밸런스 게임</h3>
+                            <p className="text-[10px] text-secondary">{todayQuestion.category} • #{completedIds.length + 1}번째</p>
+                        </div>
                     </div>
+                    {bothAnswered && (
+                        <div className={`px-3 py-1 rounded-full text-xs font-bold animate-bounce-slow ${isMatch ? 'bg-pink-500 text-white' : 'bg-gray-200 text-gray-600'}`}>
+                            {isMatch ? '💖 천생연분!' : '😂 취향 차이!'}
+                        </div>
+                    )}
                 </div>
+
+                {/* 질문 텍스트 */}
+                <div className="text-center mb-6">
+                    <p className="font-bold text-lg text-gray-800 break-keep">둘 중에 하나만 고른다면?</p>
+                </div>
+
+                {/* 선택지 영역 */}
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                    {/* Option A */}
+                    <button
+                        onClick={() => handleOptionClick('A')}
+                        disabled={hasSubmitted}
+                        className={`relative p-4 rounded-xl border-2 transition-all text-left group
+                            ${(hasSubmitted ? myAnswerData?.option === 'A' : selectedOption === 'A')
+                                ? 'border-purple-500 bg-purple-100 scale-105 shadow-md ring-2 ring-purple-200'
+                                : 'border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50'
+                            }
+                            ${hasSubmitted && myAnswerData?.option !== 'A' ? 'opacity-50 grayscale' : ''}
+                        `}
+                    >
+                        <span className="text-3xl mb-3 block">🅰️</span>
+                        <p className="text-sm font-bold text-gray-800 leading-tight break-keep">{todayQuestion.optionA}</p>
+
+                        {/* 결과 공개 시 상대방 선택 표시 */}
+                        {bothAnswered && partnerAnswerData.option === 'A' && (
+                            <div className="absolute -top-3 -right-2 bg-white p-1 rounded-full shadow-md border border-pink-100 z-10 animate-bounce">
+                                <span className="text-xs font-bold text-pink-500 px-2 py-0.5 bg-pink-100 rounded-full border border-pink-200">
+                                    {partnerUser?.name || '상대방'}
+                                </span>
+                            </div>
+                        )}
+                    </button>
+
+                    {/* Option B */}
+                    <button
+                        onClick={() => handleOptionClick('B')}
+                        disabled={hasSubmitted}
+                        className={`relative p-4 rounded-xl border-2 transition-all text-left group
+                            ${(hasSubmitted ? myAnswerData?.option === 'B' : selectedOption === 'B')
+                                ? 'border-pink-500 bg-pink-100 scale-105 shadow-md ring-2 ring-pink-200'
+                                : 'border-gray-200 bg-white hover:border-pink-300 hover:bg-pink-50'
+                            }
+                            ${hasSubmitted && myAnswerData?.option !== 'B' ? 'opacity-50 grayscale' : ''}
+                        `}
+                    >
+                        <span className="text-3xl mb-3 block">🅱️</span>
+                        <p className="text-sm font-bold text-gray-800 leading-tight break-keep">{todayQuestion.optionB}</p>
+
+                        {/* 결과 공개 시 상대방 선택 표시 */}
+                        {bothAnswered && partnerAnswerData.option === 'B' && (
+                            <div className="absolute -top-3 -right-2 bg-white p-1 rounded-full shadow-md border border-pink-100 z-10 animate-bounce">
+                                <span className="text-xs font-bold text-pink-500 px-2 py-0.5 bg-pink-100 rounded-full border border-pink-200">
+                                    {partnerUser?.name || '상대방'}
+                                </span>
+                            </div>
+                        )}
+                    </button>
+                </div>
+
+                {/* 확정 버튼 (선택했으나 아직 제출 안 했을 때) */}
+                {!hasSubmitted && selectedOption && (
+                    <button
+                        onClick={handleConfirmClick}
+                        className="w-full py-3 rounded-xl bg-gradient-to-r from-theme-500 to-pink-500 text-white font-bold shadow-lg hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 animate-fadeInUp"
+                    >
+                        <span>이걸로 확정하기</span>
+                        <Icon name="arrow-right" size={16} />
+                    </button>
+                )}
+
+                {/* 대기 상태 메시지 */}
+                {hasSubmitted && !bothAnswered && (
+                    <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-100 text-center animate-fadeIn">
+                        <div className="flex items-center justify-center gap-2 text-sm text-gray-500 mb-1">
+                            <Icon name="loader" className="animate-spin text-theme-500" size={16} />
+                            <span className="font-bold">상대방의 선택을 기다리는 중...</span>
+                        </div>
+                        <p className="text-xs text-gray-400">상대방도 답변하면 서로의 이유를 볼 수 있어요!</p>
+                    </div>
+                )}
+
+                {/* 결과 확인 (둘 다 제출 시) */}
                 {bothAnswered && (
-                    <div className={`px-3 py-1 rounded-full text-xs font-bold animate-bounce-slow ${isMatch ? 'bg-pink-500 text-white' : 'bg-gray-200 text-gray-600'}`}>
-                        {isMatch ? '💖 천생연분!' : '😂 이건 달랐네!'}
+                    <div className="mt-4 space-y-3 animate-fadeIn">
+                        {/* 내 답변 & 코멘트 */}
+                        <div className="bg-white/60 p-3 rounded-xl border border-theme-100">
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className="text-xs font-bold bg-theme-100 text-theme-600 px-2 py-0.5 rounded-full">나의 생각</span>
+                                <p className="text-xs text-gray-500 font-medium">
+                                    "{myAnswerData.option === 'A' ? todayQuestion.optionA : todayQuestion.optionB}" 선택
+                                </p>
+                            </div>
+                            <p className="text-sm text-gray-800 pl-1">{myAnswerData.comment || "코멘트 없음"}</p>
+                        </div>
+
+                        {/* 상대방 답변 & 코멘트 */}
+                        <div className="bg-white/60 p-3 rounded-xl border border-pink-100">
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className="text-xs font-bold bg-pink-100 text-pink-600 px-2 py-0.5 rounded-full">{partnerUser?.name}의 생각</span>
+                                <p className="text-xs text-gray-500 font-medium">
+                                    "{partnerAnswerData.option === 'A' ? todayQuestion.optionA : todayQuestion.optionB}" 선택
+                                </p>
+                            </div>
+                            <p className="text-sm text-gray-800 pl-1">{partnerAnswerData.comment || "코멘트 없음"}</p>
+                        </div>
                     </div>
                 )}
             </div>
 
-            {/* 질문 */}
-            <div className="text-center mb-6">
-                <p className="font-bold text-lg text-gray-800 break-keep">둘 중에 하나만 고른다면?</p>
-            </div>
+            {/* 이유 입력 모달 (팝업) */}
+            {isInputOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsInputOpen(false)} />
+                    <div className="bg-white w-full max-w-sm rounded-[2rem] p-6 relative z-10 shadow-2xl animate-scaleIn">
+                        <h3 className="text-lg font-bold text-gray-800 mb-2 text-center">선택한 이유가 뭔가요?</h3>
+                        <p className="text-xs text-gray-500 text-center mb-6">
+                            "{selectedOption === 'A' ? todayQuestion.optionA : todayQuestion.optionB}"<br />
+                            를 선택하신 이유를 간단히 적어주세요!
+                        </p>
 
-            {/* 선택지 */}
-            <div className="grid grid-cols-2 gap-3 mb-4">
-                {/* Option A */}
-                <button
-                    onClick={() => handleSelect('A')}
-                    disabled={!!myConfirmedAnswer}
-                    className={`relative p-4 rounded-xl border-2 transition-all text-left group ${(myConfirmedAnswer === 'A' || selectedOption === 'A')
-                        ? 'border-purple-500 bg-purple-100 scale-105 shadow-md'
-                        : 'border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50'
-                        } ${(myConfirmedAnswer && myConfirmedAnswer !== 'A') ? 'opacity-50 grayscale' : ''}`}
-                >
-                    <span className="text-3xl mb-3 block">🅰️</span>
-                    <p className="text-sm font-bold text-gray-800 leading-tight break-keep">{todayQuestion.optionA}</p>
+                        <textarea
+                            className="w-full h-24 p-4 rounded-xl bg-gray-50 border border-gray-200 focus:border-theme-500 focus:ring-1 focus:ring-theme-200 outline-none resize-none text-sm mb-4"
+                            placeholder="예: 나는 평소에 ~하니까 이게 더 좋아!"
+                            value={comment}
+                            onChange={(e) => setComment(e.target.value)}
+                            autoFocus
+                        />
 
-                    {/* 상대방 선택 표시 (둘 다 답변했을 때만 공개) */}
-                    {bothAnswered && partnerAnswerData?.option === 'A' && (
-                        <div className="absolute -top-3 -right-2 bg-white p-1 rounded-full shadow-sm border border-pink-100 z-10 animate-bounce">
-                            <span className="text-xs font-bold text-pink-500 px-2 py-0.5 bg-pink-100 rounded-full">
-                                {partnerUser?.name || '상대방'}
-                            </span>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setIsInputOpen(false)}
+                                className="flex-1 py-3 rounded-xl bg-gray-100 text-gray-600 font-bold hover:bg-gray-200 transition-colors"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={handleFinalSubmit}
+                                disabled={isSubmitting}
+                                className="flex-[2] py-3 rounded-xl gradient-theme text-white font-bold shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
+                            >
+                                {isSubmitting ? <Icon name="loader" className="animate-spin" /> : <Icon name="check" />}
+                                저장하고 확인하기
+                            </button>
                         </div>
-                    )}
-                </button>
-
-                {/* Option B */}
-                <button
-                    onClick={() => handleSelect('B')}
-                    disabled={!!myConfirmedAnswer}
-                    className={`relative p-4 rounded-xl border-2 transition-all text-left group ${(myConfirmedAnswer === 'B' || selectedOption === 'B')
-                        ? 'border-pink-500 bg-pink-100 scale-105 shadow-md'
-                        : 'border-gray-200 bg-white hover:border-pink-300 hover:bg-pink-50'
-                        } ${(myConfirmedAnswer && myConfirmedAnswer !== 'B') ? 'opacity-50 grayscale' : ''}`}
-                >
-                    <span className="text-3xl mb-3 block">🅱️</span>
-                    <p className="text-sm font-bold text-gray-800 leading-tight break-keep">{todayQuestion.optionB}</p>
-
-                    {/* 상대방 선택 표시 */}
-                    {bothAnswered && partnerAnswerData?.option === 'B' && (
-                        <div className="absolute -top-3 -right-2 bg-white p-1 rounded-full shadow-sm border border-pink-100 z-10 animate-bounce">
-                            <span className="text-xs font-bold text-pink-500 px-2 py-0.5 bg-pink-100 rounded-full">
-                                {partnerUser?.name || '상대방'}
-                            </span>
-                        </div>
-                    )}
-                </button>
-            </div>
-
-            {/* 선택 후 입력 폼 (확정 전) */}
-            {!myConfirmedAnswer && selectedOption && (
-                <div className="animate-fadeIn mt-4 p-4 bg-white/50 rounded-xl border border-white/60">
-                    <p className="text-xs font-bold text-gray-500 mb-2">선택한 이유 (선택사항)</p>
-                    <textarea
-                        className="w-full text-sm p-3 rounded-lg border border-gray-200 focus:border-theme-500 focus:ring-1 focus:ring-theme-200 outline-none resize-none bg-white"
-                        rows="2"
-                        placeholder="왜 이 선택지를 골랐나요? 상대방에게 알려주세요!"
-                        value={comment}
-                        onChange={(e) => setComment(e.target.value)}
-                    />
-                    <button
-                        onClick={handleSubmit}
-                        disabled={isSubmitting}
-                        className="w-full mt-3 py-3 rounded-xl bg-theme-500 text-white font-bold shadow-lg hover:bg-theme-600 active:scale-95 transition-all flex items-center justify-center gap-2"
-                    >
-                        {isSubmitting ? <Icon name="loader" className="animate-spin" /> : <Icon name="check" />}
-                        선택 확정하기 (+10 XP)
-                    </button>
+                    </div>
                 </div>
             )}
-
-            {/* 결과 및 코멘트 표시 (확정 후) */}
-            {myConfirmedAnswer && (
-                <div className="mt-4 animate-fadeIn">
-                    {!bothAnswered ? (
-                        <div className="text-center p-4 bg-gray-50 rounded-xl border border-gray-100">
-                            <div className="flex items-center justify-center gap-2 text-sm text-gray-500 mb-1">
-                                <div className="w-4 h-4 border-2 border-theme-500 border-t-transparent rounded-full animate-spin" />
-                                <span className="font-medium">상대방의 선택을 기다리고 있어요...</span>
-                            </div>
-                            <p className="text-[10px] text-gray-400">상대방도 답변하면 서로의 선택과 이유가 공개됩니다!</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-3">
-                            {/* 내 코멘트 */}
-                            <div className="bg-purple-50 p-3 rounded-xl border border-purple-100">
-                                <span className="text-[10px] font-bold text-purple-500 block mb-1">나의 생각</span>
-                                <p className="text-sm text-gray-700">{myAnswerData.comment || "코멘트 없음"}</p>
-                            </div>
-
-                            {/* 상대방 코멘트 */}
-                            <div className="bg-pink-50 p-3 rounded-xl border border-pink-100">
-                                <span className="text-[10px] font-bold text-pink-500 block mb-1">{partnerUser?.name || '상대방'}의 생각</span>
-                                <p className="text-sm text-gray-700">{partnerAnswerData?.comment || "코멘트 없음"}</p>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* 진행률 표시 */}
-            <div className="mt-4 pt-3 border-t border-gray-100">
-                <div className="flex justify-between items-center text-[10px] text-gray-400">
-                    <span>완료한 질문: {completedIds.length}개</span>
-                    <span>남은 질문: {BALANCE_QUESTIONS.length - completedIds.length}개</span>
-                </div>
-                <div className="mt-1 h-1 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                        className="h-full bg-gradient-to-r from-purple-400 to-pink-400 rounded-full transition-all"
-                        style={{ width: `${(completedIds.length / BALANCE_QUESTIONS.length) * 100}%` }}
-                    />
-                </div>
-            </div>
-        </div>
+        </>
     );
 };
 
