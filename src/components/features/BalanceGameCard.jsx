@@ -172,53 +172,53 @@ const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings,
     const handleFinalSubmit = async () => {
         if (isSubmitting) return;
 
-        // 이미 참여했는지 더블 체크 (DB 데이터 + 로컬 상태)
+        // 기존 답변 확인
         const dbAnswer = gameData.todayAnswers?.[currentUser.uid];
-        if (dbAnswer || localSubmitted) {
-            // 이미 참여했다면 코멘트 수정만 가능하거나, 아예 리턴해야 함.
-            // 사용자가 "변경 불가능"을 원했으므로 리턴.
-            alert("이미 답변을 완료하셨습니다. (수정 불가)");
-            setIsInputOpen(false);
-            return;
-        }
+        const isEditMode = !!dbAnswer || localSubmitted;
 
         setIsSubmitting(true);
 
         try {
+            // 새 코멘트 포함한 답변 객체
             const newAnswers = {
                 ...todayAnswers,
-                [currentUser.uid]: { option: selectedOption, comment: comment.trim() }
+                [currentUser.uid]: {
+                    option: selectedOption,
+                    comment: comment.trim()
+                }
             };
 
             let updates = { balanceGameV2: { ...gameData, todayAnswers: newAnswers } };
+            let alertMessage = isEditMode ? "✅ 답변이 수정되었습니다!" : "✅ 답변이 저장되었습니다! (+10 XP)";
 
-            // 첫 참여 시에만 XP/업적
-            const currentStats = settings.gameStats || { balanceCount: 0 };
-            const newCount = (currentStats.balanceCount || 0) + 1;
-            const newStats = { ...currentStats, balanceCount: newCount };
+            // 첫 참여 시에만 XP/업적 지급
+            if (!isEditMode) {
+                const currentStats = settings.gameStats || { balanceCount: 0 };
+                const newCount = (currentStats.balanceCount || 0) + 1;
+                const newStats = { ...currentStats, balanceCount: newCount };
 
-            const currentGrowth = settings.growth || { level: 1, exp: 0, achievements: [] };
-            let newExp = (currentGrowth.exp || 0) + 10;
-            let newAchievements = [...(currentGrowth.achievements || [])];
-            let alertMessage = "✅ 답변이 저장되었습니다! (+10 XP)";
+                const currentGrowth = settings.growth || { level: 1, exp: 0, achievements: [] };
+                let newExp = (currentGrowth.exp || 0) + 10;
+                let newAchievements = [...(currentGrowth.achievements || [])];
 
-            const unlockedAchievements = ACHIEVEMENTS.filter(a =>
-                a.type === 'balance' && newCount >= a.target && !newAchievements.includes(a.id)
-            );
+                const unlockedAchievements = ACHIEVEMENTS.filter(a =>
+                    a.type === 'balance' && newCount >= a.target && !newAchievements.includes(a.id)
+                );
 
-            if (unlockedAchievements.length > 0) {
-                unlockedAchievements.forEach(ach => {
-                    newAchievements.push(ach.id);
-                    newExp += ach.reward;
-                    alertMessage += `\n🏆 업적 달성: ${ach.title} (+${ach.reward} XP)`;
-                });
+                if (unlockedAchievements.length > 0) {
+                    unlockedAchievements.forEach(ach => {
+                        newAchievements.push(ach.id);
+                        newExp += ach.reward;
+                        alertMessage += `\n🏆 업적 달성: ${ach.title} (+${ach.reward} XP)`;
+                    });
+                }
+                updates.growth = { ...currentGrowth, exp: newExp, achievements: newAchievements };
+                updates.gameStats = newStats;
             }
-            updates.growth = { ...currentGrowth, exp: newExp, achievements: newAchievements };
-            updates.gameStats = newStats;
 
             // 둘 다 답변했으면 completedIds에 영구 추가
-            // (혹시 오늘 처음 둘 다 완료한거라면)
-            if (partnerAnswerData || (partnerUser && partnerUser.uid && newAnswers[partnerUser.uid])) {
+            const partnerUid = partnerUser?.uid;
+            if (partnerUid && (newAnswers[partnerUid] || partnerAnswerData)) {
                 const currentCompleted = gameData.completedIds || [];
                 if (!currentCompleted.includes(todayQuestion.id)) {
                     updates.balanceGameV2.completedIds = [...currentCompleted, todayQuestion.id];
@@ -226,8 +226,12 @@ const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings,
             }
 
             await onUpdateSettings(updates);
-            setLocalSubmitted(true); // 즉시 잠금
-            alert(alertMessage);
+            setLocalSubmitted(true);
+
+            // UI 피드백
+            // alert(alertMessage); // 너무 잦은 alert 방지, 필요하면 toast로 대체하거나 생략
+            if (!isEditMode) alert(alertMessage); // 첫 저장시에만 축하
+
             setIsInputOpen(false);
 
         } catch (error) {
@@ -302,17 +306,17 @@ const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings,
                 {(selectedOption) && (
                     <button
                         onClick={handleConfirmClick}
-                        disabled={hasSubmitted || localSubmitted}
+                        disabled={false} // 항상 열어둠 (수정 가능하게)
                         className={`w-full mb-3 py-3 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 animate-fadeInUp
                             ${hasSubmitted || localSubmitted
-                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-2 border-gray-200 shadow-none'
+                                ? 'bg-white text-theme-500 border-2 border-theme-100 hover:bg-theme-50'
                                 : 'bg-gradient-to-r from-theme-500 to-pink-500 text-white hover:opacity-90 active:scale-95'
                             }
                         `}
                     >
                         {hasSubmitted || localSubmitted ? (
                             <>
-                                <Icon name="check-circle" size={16} /> 참여 완료 (수정 불가)
+                                <Icon name="check-circle" size={16} /> 답변 완료 (수정하기)
                             </>
                         ) : (
                             <>
@@ -327,12 +331,24 @@ const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings,
                 {hasSubmitted && (
                     <div className="mt-2 space-y-3 animate-fadeIn border-t border-gray-100 pt-4">
                         {/* 내 답변 */}
-                        <div className="bg-white/60 p-3 rounded-xl border border-theme-100">
-                            <div className="flex items-center gap-2 mb-2">
-                                <span className="text-xs font-bold bg-theme-100 text-theme-600 px-2 py-0.5 rounded-full">나</span>
-                                <p className="text-xs text-gray-500 font-medium">
-                                    "{myAnswerData.option === 'A' ? todayQuestion.optionA : todayQuestion.optionB}"
-                                </p>
+                        <div className="bg-white/60 p-3 rounded-xl border border-theme-100 relative group">
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs font-bold bg-theme-100 text-theme-600 px-2 py-0.5 rounded-full">나</span>
+                                    <p className="text-xs text-gray-500 font-medium">
+                                        "{myAnswerData.option === 'A' ? todayQuestion.optionA : todayQuestion.optionB}"
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        setComment(myAnswerData.comment || '');
+                                        setIsInputOpen(true);
+                                    }}
+                                    className="p-1 hover:bg-theme-50 rounded-lg text-gray-400 hover:text-theme-500 transition-colors"
+                                    title="코멘트 수정"
+                                >
+                                    <Icon name="pencil" size={12} />
+                                </button>
                             </div>
                             <p className="text-sm text-gray-800 pl-1 whitespace-pre-wrap">{myAnswerData.comment || "코멘트 없음"}</p>
                         </div>
