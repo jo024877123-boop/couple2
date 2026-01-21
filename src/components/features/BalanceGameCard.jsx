@@ -21,38 +21,59 @@ const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings,
         return new Date(d.getTime() - offset).toISOString().slice(0, 10);
     };
     const today = getLocalISODate();
-    // gameData가 없으면 빈 객체 ({}) - 서버 데이터를 우선 사용
-    const gameData = serverGameData || settings.balanceGameV2 || {};
+    // 1. 데이터 상태 진단 (서버 데이터 우선)
+    // gameData는 부모로부터 실시간으로 주입받음 (App.jsx)
+    // 없을 경우 안전장치로 settings 사용하지만, 실시간성이 중요함
+    const rawGameData = serverGameData || settings.balanceGameV2 || {};
 
-    // 1. 데이터 상태 진단
+    // 데이터 보정 (undefined 방지)
+    const gameData = {
+        todayDate: rawGameData.todayDate || '',
+        questionId: rawGameData.questionId || null,
+        todayAnswers: rawGameData.todayAnswers || {},
+        completedIds: rawGameData.completedIds || []
+    };
+
     const storedDate = gameData.todayDate;
-    const hasQuestion = !!gameData.questionId;
 
     // 2. 날짜 변경 여부 판단
-    // storedDate가 존재하고, 오늘과 다르면 -> 새로운 날 (리셋 필요)
-    // storedDate가 없으면 -> 첫 실행 (초기화 필요)
+    // storedDate가 있고 오늘과 같으면 -> 이미 오늘 세팅 완료됨 (절대 초기화 금지)
+    const isTodaySet = storedDate === today;
+
+    // 새로운 날인가? (저장된 날짜가 있고, 오늘과 다르면)
     const isNewDay = storedDate && storedDate !== today;
+
+    // 첫 실행인가? (저장된 날짜가 아예 없으면)
     const isFirstRun = !storedDate;
+
+    // 질문이 유효한가?
+    const hasValidQuestion = !!gameData.questionId;
 
     // -------------------------------------------------------------------------
     // 3. 렌더링용 변수 설정 (화면 표시용)
     // -------------------------------------------------------------------------
-    // 새 날이면 질문 ID 없음(새로 뽑아야 함), 아니면 기존 것 사용
-    let currentQuestionId = (isNewDay || !hasQuestion) ? null : gameData.questionId;
 
-    // 완료 목록: 새 날이어도 기존 기록 유지
-    let completedIds = gameData.completedIds || [];
+    // 보여줄 질문 ID 결정
+    // 오늘 세팅이 완료되었고 질문도 있다면 -> 그 질문 ID 사용
+    // 아니면 -> null (새로 뽑아야 함)
+    let currentQuestionId = (isTodaySet && hasValidQuestion) ? gameData.questionId : null;
 
-    // 답변: 새 날이면 초기화, 같은 날이면 유지 **(핵심: 실수로 리셋 방지)**
-    let todayAnswers = isNewDay ? {} : (gameData.todayAnswers || {});
+    // 완료 목록
+    let completedIds = gameData.completedIds;
 
-    // 표시할 질문 선정
+    // 답변 목록 (오늘 날짜가 아니면 UI상으로는 비워보임, DB엔 그대로 있을 수 있음 -> useEffect에서 정리)
+    let todayAnswers = isTodaySet ? gameData.todayAnswers : {};
+
+    // -------------------------------------------------------------------------
+    // 질문 선정 로직 (렌더링 시점)
+    // -------------------------------------------------------------------------
     let todayQuestion;
     if (currentQuestionId) {
-        // 이미 저장된 질문이 있으면 그거 보여줌
+        // 이미 확정된 질문이 있다면 그것을 사용
         todayQuestion = BALANCE_QUESTIONS.find(q => q.id === currentQuestionId) || BALANCE_QUESTIONS[0];
     } else {
-        // 없거나 새 날이면 알고리즘으로 새로 뽑음 (화면엔 일단 이걸 보여주되, useEffect에서 저장함)
+        // 확정된 질문이 없다면 새로 뽑음 (알고리즘)
+        // 주의: 여기서 뽑은건 렌더링용이고, 실제 저장은 아래 useEffect에서 수행
         todayQuestion = getTodayQuestion(completedIds);
     }
 
@@ -63,37 +84,38 @@ const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings,
         // 방어: 설정 로드 전이면 중단
         if (!settings.coupleName) return;
 
-        // 저장 조건:
-        // 1) 날짜가 바뀌었을 때
-        // 2) 처음 실행일 때 (날짜 기록 없음)
-        // 3) 질문 ID가 데이터에 없을 때 (마이그레이션 등)
-        const needsInit = isNewDay || isFirstRun || !hasQuestion;
+        // ★★★ 핵심 수정: 초기화(DB 업데이트)가 필요한 경우 명확히 정의 ★★★
+        // 1. 아예 처음 실행일 때 (isFirstRun)
+        // 2. 날짜가 바뀌었을 때 (isNewDay)
+        // 3. 오늘 날짜라고 써있는데 질문 ID가 이상하게 없을 때 (!hasValidQuestion)
+        // ※ 이미 오늘 날짜로 세팅되어 있고(isTodaySet), 질문도 있다면(hasValidQuestion) -> 절대 건드리지 않음!
+        const needsInit = isFirstRun || isNewDay || (isTodaySet && !hasValidQuestion);
 
         if (needsInit) {
-            console.log(`🔄 [BalanceGame] 초기화 실행 (조건: NewDay=${isNewDay}, First=${isFirstRun}, NoQ=${!hasQuestion})`);
+            console.log(`🔄 [BalanceGame] 데이터 갱신 필요 (사유: First=${isFirstRun}, NewDay=${isNewDay}, InvalidQ=${!hasValidQuestion})`);
 
             // 저장할 데이터 구성
             const initGameData = {
                 ...gameData,
-                todayDate: today,
-                // 중요: 새 날일 때만 답변 초기화, 아니면(ex:질문ID만 복구) 기존 답변 유지
-                todayAnswers: isNewDay ? {} : (gameData.todayAnswers || {}),
-                questionId: todayQuestion.id,
+                todayDate: today, // 오늘 날짜로 갱신
+                // 날짜가 바뀐 경우에만 답변 초기화, 아니면 기존 답변 유지 (복구 모드)
+                todayAnswers: isNewDay ? {} : gameData.todayAnswers,
+                questionId: todayQuestion.id, // 새로 뽑은(또는 기존) 질문 ID 확정
                 completedIds: completedIds
             };
 
-            // 변경 사항이 있을 때만 updateSettings 호출 (무한루프 방지)
+            // 실제 변경사항이 있을 때만 저장 요청 (불필요한 쓰기 방지)
             const isDifferent =
-                JSON.stringify(initGameData.todayAnswers) !== JSON.stringify(gameData.todayAnswers) ||
                 initGameData.todayDate !== gameData.todayDate ||
-                initGameData.questionId !== gameData.questionId;
+                initGameData.questionId !== gameData.questionId ||
+                JSON.stringify(initGameData.todayAnswers) !== JSON.stringify(gameData.todayAnswers);
 
             if (isDifferent) {
-                console.log("💾 [BalanceGame] DB 업데이트 요청");
+                console.log("💾 [BalanceGame] DB 업데이트 실행");
                 onUpdateSettings({ balanceGameV2: initGameData });
             }
         }
-    }, [isNewDay, isFirstRun, hasQuestion, today, todayQuestion.id, settings.coupleName]); // settings 전체 의존성 제거
+    }, [isFirstRun, isNewDay, isTodaySet, hasValidQuestion, today, todayQuestion.id, settings.coupleName]); // 의존성 단순화
 
     // -------------------------------------------------------------------------
     // 2. 남은 시간 카운트다운 (00:00:00 까지)
