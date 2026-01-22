@@ -2166,8 +2166,140 @@ const App = () => {
 
 
 
-// 상세 보기 컴포넌트 (Native App Style with Gestures)
+// 상세 보기 컴포넌트 (Instagram Style - Native Scroll)
 function DetailView({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, onDelete, coupleUsers }) {
+  const media = post.media || [];
+  const moodInfo = getMoodInfo(post.mood);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Scroll listener for pagination dots
+  const handleScroll = (e) => {
+    const scrollLeft = e.target.scrollLeft;
+    const width = e.target.clientWidth;
+    const index = Math.round(scrollLeft / width);
+    setCurrentImageIndex(index);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] bg-black sm:bg-black/80 flex items-center justify-center animate-fadeIn">
+      {/* Backdrop (Click to close on PC) */}
+      <div className="absolute inset-0 hidden sm:block" onClick={onClose} />
+
+      {/* Main Container */}
+      <div className="relative w-full h-full sm:h-[85vh] sm:max-w-[450px] bg-white sm:rounded-[2rem] shadow-2xl overflow-y-auto overflow-x-hidden flex flex-col scrollbar-hide">
+
+        {/* 1. Header (Sticky) */}
+        <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md px-4 py-3 flex items-center justify-between border-b border-gray-100/50">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full gradient-theme flex items-center justify-center text-white text-xs font-bold ring-2 ring-white shadow-sm">
+              {((coupleUsers?.find(u => u.uid === post.author)?.name) || '나').charAt(0)}
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-bold text-gray-900 leading-none">
+                {(coupleUsers?.find(u => u.uid === post.author)?.name) || '나'}
+              </span>
+              <span className="text-[10px] text-gray-400 font-medium mt-0.5">
+                {post.location || '어딘가에서'}
+              </span>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 -mr-2 text-gray-800 hover:bg-gray-100 rounded-full transition-colors">
+            <Icon name="x" size={24} />
+          </button>
+        </div>
+
+        {/* 2. Media Section (Horizontal Snap Scroll) */}
+        <div className="relative w-full bg-gray-100">
+          {media.length > 0 ? (
+            <div
+              className="flex overflow-x-auto snap-x snap-mandatory w-full scrollbar-hide touch-pan-x"
+              onScroll={handleScroll}
+              style={{ aspectRatio: '1/1' }} // 인스타 정방형 비율 유지
+            >
+              {media.map((m, i) => (
+                <div key={i} className="flex-shrink-0 w-full h-full snap-center flex items-center justify-center bg-black relative">
+                  {m.type === 'video' ? (
+                    <video src={m.url} className="w-full h-full object-contain" controls autoPlay muted loop playsInline />
+                  ) : (
+                    <img src={m.url} className="w-full h-full object-cover" alt="" />
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="w-full aspect-square flex flex-col items-center justify-center text-gray-300 bg-gray-50">
+              <Icon name="image-off" size={48} className="mb-2" />
+              <span className="text-xs">이미지 없음</span>
+            </div>
+          )}
+
+          {/* Pagination Dots (Overlay) */}
+          {media.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10 px-3 py-1.5 bg-black/30 backdrop-blur-sm rounded-full">
+              {media.map((_, i) => (
+                <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === currentImageIndex ? 'w-4 bg-white' : 'w-1.5 bg-white/50'}`} />
+              ))}
+            </div>
+          )}
+
+          {/* Media Count Badge */}
+          {media.length > 1 && (
+            <div className="absolute top-4 right-4 bg-black/50 backdrop-blur px-2 py-1 rounded-full text-white text-[10px] font-bold">
+              {currentImageIndex + 1}/{media.length}
+            </div>
+          )}
+        </div>
+
+        {/* 3. Content Section */}
+        <div className="px-4 py-5 pb-safe sm:pb-8 flex-1 flex flex-col">
+          {/* Date & Mood Bar */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Icon name="heart" size={20} className="text-pink-500 animate-pulse-slow" fill="currentColor" />
+              <Icon name="message-circle" size={20} className="text-gray-800" />
+              <Icon name="send" size={20} className="text-gray-800" />
+            </div>
+            <div className={`px-2.5 py-1 rounded-full border text-[10px] font-bold flex items-center gap-1 ${moodInfo.bg} ${moodInfo.color} border-transparent`}>
+              <span>{moodInfo.emoji}</span> {moodInfo.label}
+            </div>
+          </div>
+
+          {/* Likes count (Fake) */}
+          <p className="text-sm font-bold text-gray-900 mb-2">좋아요 {media.length * 7 + 10}개</p>
+
+          {/* Main Text */}
+          <div className="mb-6">
+            <span className="font-bold text-sm mr-2">{(coupleUsers?.find(u => u.uid === post.author)?.name) || '나'}</span>
+            <span className="text-gray-800 text-sm whitespace-pre-wrap leading-relaxed">
+              {post.content}
+            </span>
+            <p className="text-[10px] text-gray-400 mt-2 uppercase tracking-wide">
+              {new Date(post.date).toLocaleDateString()}
+            </p>
+          </div>
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Edit/Delete Actions */}
+          {isEditMode && (
+            <div className="flex gap-2 pt-6 mt-4 border-t border-gray-100">
+              <button onClick={onEdit} className="flex-1 py-3 bg-gray-50 hover:bg-gray-100 rounded-xl font-bold text-gray-600 text-sm flex items-center justify-center gap-1.5 transition-colors">
+                <Icon name="pencil" size={14} /> 수정
+              </button>
+              <button onClick={onDelete} className="flex-1 py-3 bg-red-50 hover:bg-red-100 rounded-xl font-bold text-red-500 text-sm flex items-center justify-center gap-1.5 transition-colors">
+                <Icon name="trash" size={14} /> 삭제
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// (Deprecated) 상세 보기 컴포넌트 (Native App Style with Gestures)
+function DetailViewLegacy({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, onDelete, coupleUsers }) {
   const media = post.media || [];
   const initialIndex = post.initialIndex || 0;
   const [[page, direction], setPage] = useState([initialIndex, 0]);

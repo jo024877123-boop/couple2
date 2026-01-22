@@ -259,13 +259,14 @@ const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings,
             await onUpdateSettings(updates);
             setLocalSubmitted(true);
 
-            // 둘 다 처음 완료했을 때 히스토리에 저장
-            if (isFirstBothComplete && onSaveHistory) {
+            // 둘 다 처음 완료했을 때 히스토리에 저장 (수정: 둘 다 답변했으면 항상 최신 상태로 저장/업데이트)
+            if (partnerHasAnswer && onSaveHistory) {
                 const myAnswer = newAnswers[currentUser.uid];
                 const partnerAnswer = newAnswers[partnerUid] || partnerAnswerData;
                 const myName = coupleUsers.find(u => u.uid === currentUser.uid)?.name || '나';
                 const partnerName = partnerUser?.name || '상대방';
 
+                // onSaveHistory 내부에서 setDoc을 사용하므로 덮어쓰기 되어 안전함 (수정된 코멘트 등 반영)
                 await onSaveHistory({
                     questionId: todayQuestion.id,
                     question: todayQuestion.category,
