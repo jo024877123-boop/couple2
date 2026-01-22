@@ -25,6 +25,7 @@ import BalanceGameCard from './components/features/BalanceGameCard'; // Balance 
 import BalanceHistoryView from './components/features/BalanceHistoryView'; // Balance History
 import EndingCredits from './components/features/EndingCredits'; // Hidden Ending // Hidden Ending
 import { useDrag } from '@use-gesture/react';
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { useAuth } from './context/AuthContext'; // Auth Hook
 import {
   getCoupleSettings, updateCoupleSettings,
@@ -3266,18 +3267,47 @@ const PostForm = ({ post, setPost, onSubmit, submitLabel, loading }) => {
 };
 
 const ImageZoom = ({ src, onClose }) => (
-  <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 touch-none" onClick={onClose}>
-    <div className="absolute inset-0 bg-black/95 backdrop-blur-sm" />
-    <img
-      src={src}
-      className="relative max-w-full max-h-full object-contain animate-scaleIn shadow-2xl"
-      alt=""
-      // Simple pinch-to-zoom simulation or just preventing click close
-      onClick={(e) => e.stopPropagation()}
-    />
+  <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/95 backdrop-blur-sm" onClick={onClose}>
+    <div className="absolute inset-0 z-0" />
+
+    <div className="relative z-10 w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+      <TransformWrapper
+        initialScale={1}
+        minScale={0.5}
+        maxScale={4}
+        centerOnInit
+        limitToBounds={false} // 바운스 효과를 위해
+      >
+        {({ zoomIn, zoomOut, resetTransform }) => (
+          <>
+            <TransformComponent wrapperClass="w-full h-full flex items-center justify-center" contentClass="w-full h-full flex items-center justify-center">
+              <img
+                src={src}
+                className="max-w-full max-h-screen object-contain shadow-2xl"
+                alt="Zoom"
+              />
+            </TransformComponent>
+
+            {/* Zoom Controls Overlay */}
+            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-4 pointer-events-auto">
+              <button onClick={() => zoomOut()} className="p-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all">
+                <Icon name="minus" size={24} />
+              </button>
+              <button onClick={() => resetTransform()} className="p-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all">
+                <Icon name="refresh-cw" size={24} />
+              </button>
+              <button onClick={() => zoomIn()} className="p-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all">
+                <Icon name="plus" size={24} />
+              </button>
+            </div>
+          </>
+        )}
+      </TransformWrapper>
+    </div>
+
     <button
       onClick={onClose}
-      className="absolute top-4 right-4 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white backdrop-blur-md transition-all"
+      className="absolute top-4 right-4 z-50 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white backdrop-blur-md transition-all"
     >
       <Icon name="x" size={24} />
     </button>
