@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 // Force redeploy trigger
 import Icon from './components/ui/Icon';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import { THEMES, MOOD_OPTIONS, SAMPLE_POSTS, MEMO_COLORS } from './constants';
 import './styles/index.css';
 
@@ -946,13 +946,31 @@ const App = () => {
           {activeTab === 'gallery' && (
             galleryMode === 'grid' ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {posts.flatMap(post => post.media.map((m, idx) => ({ ...m, postId: post.id, post, idx }))).map((item, i) => (
+                {posts.flatMap(post => {
+                  if (post.media && post.media.length > 0) {
+                    return post.media.map((m, idx) => ({ ...m, postId: post.id, post, idx }));
+                  } else {
+                    // 텍스트 포스트 처리
+                    if (!post.content) return [];
+                    return [{ type: 'text_only', url: '', postId: post.id, post, idx: 0 }];
+                  }
+                }).map((item, i) => (
                   <div key={`${item.postId}-${item.idx}`}
-                    className="aspect-square rounded-3xl overflow-hidden shadow-md card-hover cursor-pointer group animate-fadeInUp relative"
+                    className="aspect-square rounded-3xl overflow-hidden shadow-md card-hover cursor-pointer group animate-fadeInUp relative bg-white border border-gray-100"
                     style={{ animationDelay: `${i * 0.05}s` }}
                     onClick={() => setSelectedPost({ ...item.post, initialIndex: item.idx })}>
                     {item.type === 'video' ? (
                       <video src={item.url} className="w-full h-full object-cover" muted />
+                    ) : item.type === 'text_only' ? (
+                      <div className={`w-full h-full flex items-center justify-center p-4 text-center bg-gradient-to-br from-indigo-50 to-pink-50 relative overflow-hidden`}>
+                        <div className="absolute top-0 right-0 w-16 h-16 bg-white/20 rounded-full blur-xl -translate-y-1/2 translate-x-1/2" />
+                        <div className="flex flex-col items-center z-10">
+                          <Icon name="quote" size={20} className="text-gray-300 mb-2 opacity-50" />
+                          <p className="text-xs font-bold text-gray-600 line-clamp-4 leading-relaxed tracking-tight break-keep">
+                            {item.post.content}
+                          </p>
+                        </div>
+                      </div>
                     ) : (
                       <img src={item.url} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt="" />
                     )}
@@ -2229,39 +2247,48 @@ const DetailView = ({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, 
 };
 
 // 서브 컴포넌트들
-const Modal = ({ children, onClose, small = false }) => (
-  <>
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md"
-      onClick={onClose}
-    />
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none sm:p-4">
+const Modal = ({ children, onClose, small = false }) => {
+  const controls = useDragControls();
+
+  return (
+    <>
       <motion.div
-        initial={{ y: "100%", opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: "100%", opacity: 0 }}
-        transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        drag="y"
-        dragConstraints={{ top: 0 }}
-        dragSnapToOrigin={true}
-        onDragEnd={(_, info) => {
-          // Velocity check or distance check
-          if (info.offset.y > 150 || info.velocity.y > 500) {
-            onClose();
-          }
-        }}
-        className={`pointer-events-auto relative w-full ${small ? 'max-w-sm' : 'max-w-lg'} card-bg rounded-t-[2rem] rounded-b-none sm:rounded-[2rem] shadow-2xl p-6 overflow-y-auto max-h-[85vh] sm:max-h-[90vh] pb-safe sm:pb-6`}
-      >
-        {/* Mobile Handle Bar */}
-        <div className="w-12 h-1.5 bg-gray-300/50 rounded-full mx-auto mb-6 sm:hidden cursor-grab active:cursor-grabbing" />
-        {children}
-      </motion.div>
-    </div>
-  </>
-);
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md"
+        onClick={onClose}
+      />
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none sm:p-4">
+        <motion.div
+          initial={{ y: "100%", opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: "100%", opacity: 0 }}
+          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          drag="y"
+          dragControls={controls}
+          dragListener={false} // 핸들바에서만 드래그 시작 가능
+          dragConstraints={{ top: 0, bottom: 0 }} // 아래로 드래그 허용 (elasticity로 닫힘 모션)
+          dragElastic={{ top: 0, bottom: 0.5 }} // 아래로 당길 때 탄성
+          dragSnapToOrigin={true}
+          onDragEnd={(_, info) => {
+            if (info.offset.y > 100 || info.velocity.y > 200) {
+              onClose();
+            }
+          }}
+          className={`pointer-events-auto relative w-full ${small ? 'max-w-sm' : 'max-w-lg'} card-bg rounded-t-[2rem] rounded-b-none sm:rounded-[2rem] shadow-2xl p-6 overflow-y-auto max-h-[90vh] pb-safe sm:pb-6`}
+        >
+          {/* Mobile Handle Bar (Drag Target) */}
+          <div
+            className="w-16 h-1.5 bg-gray-200 rounded-full mx-auto mb-6 sm:hidden cursor-grab active:cursor-grabbing touch-none"
+            onPointerDown={(e) => controls.start(e)}
+          />
+          {children}
+        </motion.div>
+      </div>
+    </>
+  );
+};
 
 const ModalHeader = ({ title, subtitle, onClose }) => (
   <div className="flex justify-between items-start mb-6">
