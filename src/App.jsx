@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 // Force redeploy trigger
 import Icon from './components/ui/Icon';
-import { motion, AnimatePresence, useDragControls } from 'framer-motion';
+import { motion, AnimatePresence, useDragControls, useMotionValue, useTransform, useAnimation } from 'framer-motion';
 import { THEMES, MOOD_OPTIONS, SAMPLE_POSTS, MEMO_COLORS } from './constants';
 import './styles/index.css';
 
@@ -2166,8 +2166,213 @@ const App = () => {
 
 
 
-// 상세 보기 컴포넌트 (전체 리디자인 - Premium/Instagram Style)
-const DetailView = ({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, onDelete, coupleUsers }) => {
+// 상세 보기 컴포넌트 (Native App Style with Gestures)
+function DetailView({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, onDelete, coupleUsers }) {
+  const media = post.media || [];
+  const initialIndex = post.initialIndex || 0;
+  const [[page, direction], setPage] = useState([initialIndex, 0]);
+  const imageIndex = ((page % media.length) + media.length) % media.length;
+  const moodInfo = getMoodInfo(post.mood);
+  const [zoomImage, setZoomImage] = useState(null);
+
+  // Image Swipe Logic
+  const paginate = (newDirection) => {
+    setPage([page + newDirection, newDirection]);
+  };
+
+  const swipeConfidenceThreshold = 10000;
+  const swipePower = (offset, velocity) => {
+    return Math.abs(offset) * velocity;
+  };
+
+  const slideVariants = {
+    enter: (direction) => ({
+      x: direction > 0 ? 300 : -300,
+      opacity: 0,
+      scale: 0.9
+    }),
+    center: {
+      zIndex: 1,
+      x: 0,
+      opacity: 1,
+      scale: 1
+    },
+    exit: (direction) => ({
+      zIndex: 0,
+      x: direction < 0 ? 300 : -300,
+      opacity: 0,
+      scale: 0.9
+    })
+  };
+
+  // Bottom Sheet Logic
+  const sheetControls = useAnimation();
+  const [sheetState, setSheetState] = useState('middle'); // 'top', 'middle', 'bottom'
+
+  return (
+    <div className="fixed inset-0 z-[60] bg-black flex flex-col overflow-hidden">
+      {/* 1. Header (Close Btn) - Always visible on top */}
+      <div className="absolute top-0 left-0 right-0 z-50 p-4 flex justify-between items-start pointer-events-none">
+        {/* User Info Badge */}
+        <div className="flex items-center gap-2 bg-black/30 backdrop-blur-md px-3 py-1.5 rounded-full pointer-events-auto animate-fadeIn">
+          <div className="w-6 h-6 rounded-full gradient-theme flex items-center justify-center text-white text-[10px] font-bold border border-white/20">
+            {((coupleUsers?.find(u => u.uid === post.author)?.name) || '나').charAt(0)}
+          </div>
+          <span className="text-white text-xs font-bold shadow-sm">{(coupleUsers?.find(u => u.uid === post.author)?.name) || '나'}</span>
+        </div>
+
+        <button onClick={onClose} className="w-10 h-10 bg-black/30 hover:bg-black/50 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all btn-bounce pointer-events-auto">
+          <Icon name="x" size={20} />
+        </button>
+      </div>
+
+      {/* 2. Image Area (Carousel) - Takes full space */}
+      <div className="relative flex-1 w-full h-full flex items-center justify-center bg-[#111] overflow-hidden">
+        {/* Background Blur Effect */}
+        <motion.div
+          key={`bg-${imageIndex}`}
+          initial={{ opacity: 0 }} animate={{ opacity: 0.4 }} exit={{ opacity: 0 }} transition={{ duration: 1 }}
+          className="absolute inset-0 bg-cover bg-center blur-3xl opacity-40 scale-110 pointer-events-none"
+          style={{ backgroundImage: `url(${media[imageIndex]?.url})` }}
+        />
+
+        {/* Image Slider */}
+        <div className="relative w-full h-full flex items-center justify-center z-10 touch-none">
+          <AnimatePresence initial={false} custom={direction} mode="popLayout">
+            <motion.div
+              key={page}
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{
+                x: { type: "spring", stiffness: 300, damping: 30 },
+                opacity: { duration: 0.2 }
+              }}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={1}
+              onDragEnd={(e, { offset, velocity }) => {
+                const swipe = swipePower(offset.x, velocity.x);
+                if (swipe < -swipeConfidenceThreshold) {
+                  paginate(1);
+                } else if (swipe > swipeConfidenceThreshold) {
+                  paginate(-1);
+                }
+              }}
+              className="absolute inset-0 flex items-center justify-center w-full h-full p-0 sm:p-4"
+            >
+              {media[imageIndex]?.type === 'video' ? (
+                <video src={media[imageIndex].url} className="w-full h-full object-contain max-h-[100dvh]" controls autoPlay playsInline />
+              ) : (
+                <img src={media[imageIndex]?.url} className="w-full h-full object-contain max-h-[100dvh] shadow-2xl" alt="" draggable={false}
+                  onClick={() => setZoomImage(media[imageIndex].url)} />
+              )}
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Navigation Arrows (Desktop / visual hint) */}
+          {media.length > 1 && (
+            <>
+              <button onClick={(e) => { e.stopPropagation(); paginate(-1); }} className="absolute left-2 p-3 rounded-full text-white/50 hover:bg-black/20 hover:text-white transition-all z-20 hidden sm:flex">
+                <Icon name="chevron-left" size={32} />
+              </button>
+              <button onClick={(e) => { e.stopPropagation(); paginate(1); }} className="absolute right-2 p-3 rounded-full text-white/50 hover:bg-black/20 hover:text-white transition-all z-20 hidden sm:flex">
+                <Icon name="chevron-right" size={32} />
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Pagination Dots */}
+        {media.length > 1 && (
+          <div className="absolute bottom-[35%] left-1/2 -translate-x-1/2 flex gap-1.5 z-10 pointer-events-none transition-opacity duration-300"
+            style={{ opacity: sheetState === 'top' ? 0 : 1 }}>
+            {media.map((_, i) => (
+              <div key={i} className={`h-1.5 rounded-full transition-all shadow-sm ${i === ((imageIndex % media.length + media.length) % media.length) ? 'w-6 bg-white' : 'w-1.5 bg-white/40'}`} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 3. Bottom Sheet (Content) - Draggable */}
+      <motion.div
+        drag="y"
+        dragConstraints={{ top: -600, bottom: 0 }}
+        dragElastic={0.2}
+        onDragEnd={(e, { offset, velocity }) => {
+          if (offset.y > 100 || velocity.y > 200) {
+            sheetControls.start({ y: "calc(100% - 100px)" }); // Collapsed
+            setSheetState('bottom');
+          } else if (offset.y < -100 || velocity.y < -200) {
+            sheetControls.start({ y: 0 }); // Expanded
+            setSheetState('top');
+          } else {
+            // Snap to nearest
+            if (sheetState === 'bottom') sheetControls.start({ y: "calc(100% - 100px)" });
+            else if (sheetState === 'top') sheetControls.start({ y: 0 });
+            else sheetControls.start({ y: "40vh" });
+          }
+        }}
+        initial={{ y: "45vh" }}
+        animate={sheetControls}
+        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+        className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[2rem] shadow-[0_-10px_40px_rgba(0,0,0,0.3)] flex flex-col z-40 touch-none h-[85vh]"
+      >
+        {/* Handle Bar */}
+        <div className="w-full pt-4 pb-2 flex justify-center cursor-grab active:cursor-grabbing touch-none"
+          onPointerDown={(e) => e.preventDefault()}
+        >
+          <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+        </div>
+
+        {/* Content Scroll Area */}
+        <div className="flex-1 overflow-y-auto px-6 pb-10 overscroll-contain touch-pan-y"
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          {/* Header Info */}
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-bold text-gray-400 mb-1">{new Date(post.date).toLocaleDateString()}</h3>
+              {post.location && (
+                <div className="flex items-center gap-1 text-xs text-gray-500">
+                  <Icon name="map-pin" size={12} /> {post.location}
+                </div>
+              )}
+            </div>
+            <div className={`px-3 py-1.5 rounded-full border text-xs font-bold flex items-center gap-1 ${moodInfo.bg} ${moodInfo.color} border-transparent`}>
+              <span>{moodInfo.emoji}</span> {moodInfo.label}
+            </div>
+          </div>
+
+          {/* Main Text */}
+          <div className="prose prose-sm max-w-none text-gray-800 leading-relaxed text-base whitespace-pre-wrap font-sans">
+            {post.content}
+          </div>
+
+          {/* Actions */}
+          {isEditMode && (
+            <div className="flex gap-3 mt-8 pt-6 border-t border-gray-100 pb-safe">
+              <button onClick={onEdit} className="flex-1 py-3 bg-gray-100 rounded-xl font-bold text-gray-600 flex items-center justify-center gap-2">
+                <Icon name="pencil" size={16} /> 수정
+              </button>
+              <button onClick={onDelete} className="flex-1 py-3 bg-red-50 rounded-xl font-bold text-red-500 flex items-center justify-center gap-2">
+                <Icon name="trash" size={16} /> 삭제
+              </button>
+            </div>
+          )}
+        </div>
+      </motion.div>
+
+      {/* Zoom Modal (Simple) */}
+      {zoomImage && <ImageZoom src={zoomImage} onClose={() => setZoomImage(null)} />}
+    </div>
+  );
+}
+
+// (Legacy) 상세 보기 컴포넌트
+const OldDetailView = ({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, onDelete, coupleUsers }) => {
   const [currentIndex, setCurrentIndex] = useState(post.initialIndex || 0);
   const moodInfo = getMoodInfo(post.mood);
   const media = post.media || [];
