@@ -2190,7 +2190,21 @@ function DetailView({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, 
   // 댓글 관련 상태
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editCommentText, setEditCommentText] = useState('');
   const comments = post.comments || [];
+
+  const handleUpdateComment = () => {
+    if (!editCommentText.trim()) return;
+    const updatedComments = comments.map(c =>
+      c.id === editingCommentId ? { ...c, text: editCommentText } : c
+    );
+    if (onUpdatePost) {
+      onUpdatePost({ ...post, comments: updatedComments });
+    }
+    setEditingCommentId(null);
+    setEditCommentText('');
+  };
 
   // Scroll listener for pagination dots
   const handleScroll = (e) => {
@@ -2242,9 +2256,21 @@ function DetailView({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, 
         {/* 1. Header (Sticky) */}
         <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md px-4 py-3 flex items-center justify-between border-b border-gray-100/50">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full gradient-theme flex items-center justify-center text-white text-xs font-bold ring-2 ring-white shadow-sm">
-              {((coupleUsers?.find(u => u.uid === post.author)?.name) || '나').charAt(0)}
-            </div>
+
+            {(() => {
+              const author = coupleUsers?.find(u => u.uid === post.author);
+              return (
+                <div onClick={(e) => { e.stopPropagation(); if (author?.photoURL) setZoomImage(author.photoURL); }} className="cursor-pointer">
+                  {author?.photoURL ? (
+                    <img src={author.photoURL} alt="프사" className="w-8 h-8 rounded-full object-cover ring-2 ring-white shadow-sm" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full gradient-theme flex items-center justify-center text-white text-xs font-bold ring-2 ring-white shadow-sm">
+                      {(author?.name || '나').charAt(0)}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
             <div className="flex flex-col">
               <span className="text-sm font-bold text-gray-900 leading-none">
                 {(coupleUsers?.find(u => u.uid === post.author)?.name) || '나'}
@@ -2365,22 +2391,73 @@ function DetailView({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, 
                 {comments.length === 0 ? (
                   <p className="text-xs text-center text-gray-300 py-4">아직 댓글이 없습니다.</p>
                 ) : (
-                  comments.map(comment => (
-                    <div key={comment.id} className="flex gap-2 items-start group">
-                      <span className="text-xs font-bold text-gray-800 mt-0.5">
-                        {(coupleUsers?.find(u => u.uid === comment.author)?.name) || '알 수 없음'}
-                      </span>
-                      <div className="flex-1">
-                        <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap">{comment.text}</p>
-                        <p className="text-[10px] text-gray-300 mt-0.5">{new Date(comment.date).toLocaleDateString()}</p>
+
+                  comments.map(comment => {
+                    const author = coupleUsers?.find(u => u.uid === comment.author);
+                    const isMyComment = currentUser?.uid === comment.author;
+                    const isEditing = editingCommentId === comment.id;
+
+                    return (
+                      <div key={comment.id} className="flex gap-3 items-start group">
+                        {/* 댓글 작성자 프사 */}
+                        <div
+                          className="shrink-0 cursor-pointer mt-0.5"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (author?.photoURL) setZoomImage(author.photoURL);
+                          }}
+                        >
+                          {author?.photoURL ? (
+                            <img src={author.photoURL} alt="" className="w-8 h-8 rounded-full object-cover border border-gray-100" />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-theme-100 flex items-center justify-center text-theme-600 text-[10px] font-bold">
+                              {(author?.name || '?').charAt(0)}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex-1">
+                          <span className="text-xs font-bold text-gray-800 block mb-0.5">
+                            {author?.name || '알 수 없음'}
+                          </span>
+
+                          {isEditing ? (
+                            <div className="flex gap-2 mt-1">
+                              <input
+                                value={editCommentText}
+                                onChange={e => setEditCommentText(e.target.value)}
+                                className="flex-1 bg-gray-100 rounded-lg px-3 py-2 text-xs outline-none border focus:border-theme-300 transition-colors"
+                                autoFocus
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleUpdateComment(); }}
+                              />
+                              <button onClick={handleUpdateComment} className="text-xs font-bold text-theme-500 whitespace-nowrap px-2">저장</button>
+                              <button onClick={() => setEditingCommentId(null)} className="text-xs text-gray-400 whitespace-nowrap px-2">취소</button>
+                            </div>
+                          ) : (
+                            <>
+                              <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap">{comment.text}</p>
+                              <p className="text-[10px] text-gray-300 mt-1">{new Date(comment.date).toLocaleDateString()}</p>
+                            </>
+                          )}
+                        </div>
+
+                        {/* 댓글 액션 (내 댓글만) */}
+                        {isMyComment && !isEditing && (
+                          <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity self-start">
+                            <button onClick={() => {
+                              setEditingCommentId(comment.id);
+                              setEditCommentText(comment.text);
+                            }} className="text-gray-300 hover:text-theme-500 p-1.5 transition-colors">
+                              <Icon name="pencil" size={12} />
+                            </button>
+                            <button onClick={() => handleDeleteComment(comment.id)} className="text-gray-300 hover:text-red-500 p-1.5 transition-colors">
+                              <Icon name="x" size={12} />
+                            </button>
+                          </div>
+                        )}
                       </div>
-                      {currentUser?.uid === comment.author && (
-                        <button onClick={() => handleDeleteComment(comment.id)} className="text-gray-300 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Icon name="x" size={12} />
-                        </button>
-                      )}
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
 
