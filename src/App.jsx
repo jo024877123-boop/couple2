@@ -183,6 +183,7 @@ const App = () => {
   const [isInstallGuideOpen, setIsInstallGuideOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [isAchievementOpen, setIsAchievementOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const isIos = /iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -529,6 +530,8 @@ const App = () => {
     // 3. Confirm Save
     if (!confirm("소중한 추억을 저장하시겠습니까?")) return;
 
+    setIsUploading(true); // 로딩 시작
+
     try {
       // Media Upload Logic
       const processedMedia = [];
@@ -594,6 +597,8 @@ const App = () => {
     } catch (err) {
       console.error(err);
       alert('게시글을 업로드하는 중 오류가 발생했습니다.\n' + err.message);
+    } finally {
+      setIsUploading(false); // 로딩 종료
     }
   };
 
@@ -1430,7 +1435,7 @@ const App = () => {
         {isModalOpen && (
           <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); resetForm(); }}>
             <ModalHeader title="✨ 오늘의 기억" subtitle="소중한 순간을 기록으로" onClose={() => { setIsModalOpen(false); resetForm(); }} />
-            <PostForm post={newPost} setPost={setNewPost} onSubmit={handleAddPost} submitLabel="💕 저장하기" />
+            <PostForm post={newPost} setPost={setNewPost} onSubmit={handleAddPost} submitLabel="💕 저장하기" loading={isUploading} />
           </Modal>
         )}
       </AnimatePresence>
@@ -2336,7 +2341,7 @@ const InputField = ({ label, value, onChange, placeholder, type = 'text', icon }
   </div>
 );
 
-const PostForm = ({ post, setPost, onSubmit, submitLabel }) => {
+const PostForm = ({ post, setPost, onSubmit, submitLabel, loading }) => {
   const fileInputRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -2486,7 +2491,14 @@ const PostForm = ({ post, setPost, onSubmit, submitLabel }) => {
         )}
       </div>
 
-      <button type="submit" className="w-full py-4 rounded-2xl gradient-theme font-bold shadow-theme btn-bounce text-lg btn-primary-text">{submitLabel}</button>
+      <button type="submit" disabled={loading} className="w-full py-4 rounded-2xl gradient-theme font-bold shadow-theme btn-bounce text-lg btn-primary-text disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+        {loading ? (
+          <>
+            <Icon name="loader" size={20} className="animate-spin" />
+            <span>업로드 중...</span>
+          </>
+        ) : submitLabel}
+      </button>
     </form>
   );
 };
