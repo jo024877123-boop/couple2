@@ -3,7 +3,8 @@ import Icon from './Icon';
 
 const PostCard = ({ post, settings, getMoodInfo, onClick, isEditMode, onEdit, onDelete, coupleUsers = [] }) => {
     const moodInfo = getMoodInfo(post.mood);
-    const thumbnail = post.media[post.thumbnailIndex] || post.media[0];
+    const hasMedia = post.media && post.media.length > 0;
+    const thumbnail = hasMedia ? (post.media[post.thumbnailIndex] || post.media[0]) : null;
     const dateStr = new Date(post.date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
 
     // Find author info from coupleUsers
@@ -40,27 +41,29 @@ const PostCard = ({ post, settings, getMoodInfo, onClick, isEditMode, onEdit, on
                     )}
                 </div>
 
-                <div className="relative rounded-2xl overflow-hidden aspect-[3/2] mb-4 group">
-                    {thumbnail?.type === 'video' ? (
-                        <video src={thumbnail.url} className="w-full h-full object-cover" muted />
-                    ) : (
-                        <img src={thumbnail?.url} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                    )}
-                    {post.media.length > 1 && (
-                        <div className="absolute top-3 right-3 glass px-3 py-1.5 rounded-full text-xs font-bold text-primary">
-                            +{post.media.length - 1}
-                        </div>
-                    )}
-                    {thumbnail?.type === 'video' && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-14 h-14 bg-white/30 backdrop-blur rounded-full flex items-center justify-center">
-                                <Icon name="play" size={24} className="text-white ml-1" fill />
+                {hasMedia && (
+                    <div className="relative rounded-2xl overflow-hidden aspect-[3/2] mb-4 group bg-gray-100">
+                        {thumbnail?.type === 'video' ? (
+                            <video src={thumbnail.url} className="w-full h-full object-cover" muted />
+                        ) : (
+                            <img src={thumbnail?.url} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                        )}
+                        {post.media.length > 1 && (
+                            <div className="absolute top-3 right-3 glass px-3 py-1.5 rounded-full text-xs font-bold text-primary">
+                                +{post.media.length - 1}
                             </div>
-                        </div>
-                    )}
-                </div>
+                        )}
+                        {thumbnail?.type === 'video' && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="w-14 h-14 bg-white/30 backdrop-blur rounded-full flex items-center justify-center">
+                                    <Icon name="play" size={24} className="text-white ml-1" fill />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
 
-                <p className="text-base font-medium leading-relaxed text-primary line-clamp-2">{post.content}</p>
+                <p className={`font-medium leading-relaxed text-primary whitespace-pre-wrap ${hasMedia ? 'text-base line-clamp-2' : 'text-lg line-clamp-6'}`}>{post.content}</p>
             </div>
         </div>
     );
