@@ -1065,27 +1065,42 @@ const App = () => {
               </div>
             ) : (
               <div className="columns-2 md:columns-3 lg:columns-4 gap-6 space-y-6 px-2 pb-10">
-                {posts.flatMap(post => post.media.map((m, idx) => ({ ...m, postId: post.id, post, idx }))).map((item, i) => (
-                  <div key={`${item.postId}-${item.idx}`}
-                    className="break-inside-avoid relative group cursor-pointer animate-fadeInUp"
-                    style={{ animationDelay: `${i * 0.05}s`, transform: `rotate(${i % 2 === 0 ? -2 : 2}deg)` }}
-                    onClick={() => setSelectedPost({ ...item.post, initialIndex: item.idx })}>
-                    <div className="bg-white p-3 pb-8 shadow-md hover:shadow-xl transition-all duration-500 hover:scale-105 hover:rotate-0 hover:z-20 relative transform-gpu">
-                      <div className="aspect-square bg-gray-100 overflow-hidden mb-2 shadow-inner">
-                        {item.type === 'video' ? <video src={item.url} className="w-full h-full object-cover" muted /> : <img src={item.url} className="w-full h-full object-cover filter contrast-[1.05]" alt="" />}
-                      </div>
-                      <p className="text-center font-bold text-gray-500 text-xs truncate px-1 absolute bottom-2 left-0 right-0 font-sans opacity-70">
-                        {item.post.content || item.post.location || new Date(item.post.date).toLocaleDateString()}
-                      </p>
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-6 bg-white/40 backdrop-blur-[1px] shadow-sm opacity-80" style={{ transform: `translateX(-50%) rotate(${i % 3 === 0 ? -5 : 5}deg)` }}></div>
-                      {item.type === 'video' && (
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-black/20 rounded-full flex items-center justify-center">
-                          <Icon name="play" size={12} className="text-white ml-0.5" fill />
+                {posts.map((post, i) => {
+                  // 폴라로이드 모드에서도 대표 이미지만 표시
+                  if (!post.media || post.media.length === 0) return null; // 텍스트만 있는건 폴라로이드에서 제외하거나 따로 처리 (여기선 제외)
+
+                  const thumbIdx = (post.thumbnailIndex !== undefined && post.media[post.thumbnailIndex]) ? post.thumbnailIndex : 0;
+                  const item = { ...post.media[thumbIdx], postId: post.id, post, idx: thumbIdx, mediaCount: post.media.length };
+
+                  return (
+                    <div key={post.id}
+                      className="break-inside-avoid relative group cursor-pointer animate-fadeInUp"
+                      style={{ animationDelay: `${i * 0.05}s`, transform: `rotate(${i % 2 === 0 ? -1 : 1}deg)` }}
+                      onClick={() => setSelectedPost({ ...item.post, initialIndex: item.idx })}>
+                      <div className="bg-white p-3 pb-8 shadow-md hover:shadow-xl transition-all duration-500 hover:scale-105 hover:rotate-0 hover:z-20 relative transform-gpu">
+                        <div className="aspect-square bg-gray-100 overflow-hidden mb-2 shadow-inner relative">
+                          {item.type === 'video' ? <video src={item.url} className="w-full h-full object-cover" muted /> : <img src={item.url} className="w-full h-full object-cover filter contrast-[1.05]" alt="" />}
+
+                          {/* 여러 장 배지 */}
+                          {item.mediaCount > 1 && (
+                            <div className="absolute top-2 right-2 bg-black/50 backdrop-blur px-2 py-0.5 rounded-full text-white text-[10px] font-bold flex items-center gap-1">
+                              <Icon name="copy" size={10} /> {item.mediaCount}
+                            </div>
+                          )}
                         </div>
-                      )}
+                        <p className="text-center font-bold text-gray-500 text-xs truncate px-1 absolute bottom-2 left-0 right-0 font-sans opacity-70">
+                          {item.post.content || item.post.location || new Date(item.post.date).toLocaleDateString()}
+                        </p>
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-6 bg-white/40 backdrop-blur-[1px] shadow-sm opacity-80" style={{ transform: `translateX(-50%) rotate(${i % 3 === 0 ? -5 : 5}deg)` }}></div>
+                        {item.type === 'video' && (
+                          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-black/20 rounded-full flex items-center justify-center">
+                            <Icon name="play" size={12} className="text-white ml-0.5" fill />
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )
           )}
@@ -2151,7 +2166,7 @@ const App = () => {
 
 
 
-// 상세 보기 컴포넌트 (전체 리디자인)
+// 상세 보기 컴포넌트 (전체 리디자인 - Premium/Instagram Style)
 const DetailView = ({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, onDelete, coupleUsers }) => {
   const [currentIndex, setCurrentIndex] = useState(post.initialIndex || 0);
   const moodInfo = getMoodInfo(post.mood);
@@ -2161,160 +2176,180 @@ const DetailView = ({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, 
   const goNext = () => setCurrentIndex(prev => (prev + 1) % media.length);
   const goPrev = () => setCurrentIndex(prev => (prev - 1 + media.length) % media.length);
 
+  // Swipe gesture support (basic)
+  const xDown = useRef(null);
+  const handleTouchStart = (e) => { xDown.current = e.touches[0].clientX; };
+  const handleTouchMove = (e) => {
+    if (!xDown.current) return;
+    const xUp = e.touches[0].clientX;
+    const xDiff = xDown.current - xUp;
+    if (Math.abs(xDiff) > 50) { // Threshold
+      if (xDiff > 0) goNext(); else goPrev();
+      xDown.current = null;
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4"
+      className="fixed inset-0 z-[60] flex items-center justify-center sm:p-6 p-0" // 모바일은 풀스크린 (p-0)
     >
-      {/* 배경 */}
+      {/* 배경 (Backdrop) */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-black/70 backdrop-blur-lg"
+        className="absolute inset-0 bg-black/90 backdrop-blur-xl" // 더 진하고 흐린 배경
         onClick={onClose}
       />
 
       {/* 컨테이너 */}
       <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        className="relative detail-modal w-full max-w-5xl card-bg rounded-[2rem] shadow-2xl overflow-hidden"
+        initial={{ scale: 0.95, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.95, opacity: 0, y: 20 }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        className="relative w-full max-w-2xl h-full sm:h-auto sm:max-h-[90vh] bg-black sm:bg-[#1a1a1a] sm:rounded-3xl shadow-2xl overflow-y-auto overflow-x-hidden flex flex-col"
       >
-        {/* 닫기 버튼 */}
-        <button onClick={onClose} className="absolute top-4 right-4 z-20 w-10 h-10 bg-black/40 hover:bg-black/60 backdrop-blur rounded-full flex items-center justify-center text-white transition-all btn-bounce">
-          <Icon name="x" size={20} />
-        </button>
+        {/* 헤더 (모바일) */}
+        <div className="sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-black/60 backdrop-blur-md sm:bg-transparent sm:absolute sm:top-2 sm:right-2 sm:p-0 sm:justify-end w-full">
+          <div className="flex items-center gap-3 sm:hidden">
+            <div className="w-8 h-8 rounded-full gradient-theme flex items-center justify-center text-white text-xs font-bold ring-2 ring-black">
+              {((coupleUsers?.find(u => u.uid === post.author)?.name) || '나').charAt(0)}
+            </div>
+            <span className="font-bold text-white text-sm">{(coupleUsers?.find(u => u.uid === post.author)?.name) || '나'}</span>
+          </div>
+          <button onClick={onClose} className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all">
+            <Icon name="x" size={20} />
+          </button>
+        </div>
 
-        {/* 스크롤 가능한 내용 */}
-        <div className="detail-scroll">
-          {/* 미디어 섹션 */}
-          <div className={`relative bg-black aspect-[16/10] sm:aspect-[16/9] ${(post.filter && post.filter !== 'none') ? `filter-${post.filter}` : ''}`}>
-            {media.length > 0 && (
-              <>
+        {/* 미디어 섹션 (인스타 스타일) */}
+        <div className="relative w-full bg-[#111] shrink-0 min-h-[50vh] flex items-center justify-center group overflow-hidden"
+          onTouchStart={handleTouchStart} onTouchMove={handleTouchMove}>
+
+          {media.length > 0 ? (
+            <>
+              {/* 블러 배경 효과 (꽉 찬 느낌) */}
+              {media[currentIndex].type !== 'video' && (
+                <div className="absolute inset-0 opacity-30 select-none pointer-events-none"
+                  style={{
+                    backgroundImage: `url(${media[currentIndex].url})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    filter: 'blur(40px)'
+                  }}
+                />
+              )}
+
+              {/* 메인 미디어 */}
+              <div className="relative z-10 w-full h-full flex items-center justify-center">
                 {media[currentIndex].type === 'video' ? (
-                  <video src={media[currentIndex].url} className="w-full h-full object-contain" controls autoPlay />
+                  <video src={media[currentIndex].url} className="max-w-full max-h-[70vh] w-auto h-auto object-contain shadow-2xl" controls autoPlay playsInline />
                 ) : (
                   <img
                     src={media[currentIndex].url}
-                    className="w-full h-full object-contain cursor-zoom-in hover:opacity-90 transition-opacity"
+                    className="max-w-full max-h-[70vh] w-auto h-auto object-contain shadow-2xl cursor-zoom-in"
                     alt=""
                     onClick={() => setZoomImage(media[currentIndex].url)}
-                    title="클릭하여 확대"
                   />
                 )}
-
-                {/* 네비게이션 버튼 */}
-                {media.length > 1 && (
-                  <>
-                    <button onClick={goPrev} className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/20 hover:bg-white/40 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all btn-bounce">
-                      <Icon name="chevron-left" size={24} />
-                    </button>
-                    <button onClick={goNext} className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/20 hover:bg-white/40 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all btn-bounce">
-                      <Icon name="chevron-right" size={24} />
-                    </button>
-
-                    {/* 인디케이터 */}
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                      {media.map((_, i) => (
-                        <button key={i} onClick={() => setCurrentIndex(i)}
-                          className={`h-2 rounded-full transition-all ${i === currentIndex ? 'w-8 bg-white' : 'w-2 bg-white/50 hover:bg-white/70'}`} />
-                      ))}
-                    </div>
-
-                    {/* 카운터 */}
-                    <div className="absolute top-4 left-4 bg-black/40 backdrop-blur px-3 py-1.5 rounded-full text-white text-sm font-medium">
-                      {currentIndex + 1} / {media.length}
-                    </div>
-                  </>
-                )}
-              </>
-            )}
-          </div>
-
-          {/* 정보 섹션 */}
-          <div className="p-6 sm:p-8 space-y-6">
-            {/* 메타 정보 */}
-            <div className="flex items-center gap-4 flex-wrap">
-              <div className="flex items-center gap-2 bg-theme-100 px-4 py-2 rounded-full">
-                <span className="text-xl">{moodInfo.emoji}</span>
-                <span className="font-bold text-theme-600">{moodInfo.label}</span>
               </div>
-              <div className="flex items-center gap-2 text-secondary">
-                <Icon name="calendar" size={16} />
-                <span className="text-sm font-medium">
-                  {new Date(post.date).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-secondary">
-                <Icon name="map-pin" size={16} />
-                <span className="text-sm font-medium">{post.location}</span>
-              </div>
+
+              {/* 네비게이션 */}
+              {media.length > 1 && (
+                <>
+                  <button onClick={(e) => { e.stopPropagation(); goPrev(); }} className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white/80 hover:bg-black/70 hover:text-white transition-all opacity-0 group-hover:opacity-100 z-20">
+                    <Icon name="chevron-left" size={24} />
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); goNext(); }} className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white/80 hover:bg-black/70 hover:text-white transition-all opacity-0 group-hover:opacity-100 z-20">
+                    <Icon name="chevron-right" size={24} />
+                  </button>
+                  {/* 페이지 인디케이터 (닷) */}
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+                    {media.map((_, i) => (
+                      <div key={i} className={`h-1.5 rounded-full transition-all shadow-sm ${i === currentIndex ? 'w-6 bg-white' : 'w-1.5 bg-white/40'}`} />
+                    ))}
+                  </div>
+                  {/* 카운터 배지 */}
+                  <div className="absolute top-4 right-4 bg-black/60 backdrop-blur px-2.5 py-1 rounded-full text-white text-xs font-bold z-20">
+                    {currentIndex + 1}/{media.length}
+                  </div>
+                </>
+              )}
+            </>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center text-gray-500">
+              <Icon name="image-off" size={48} className="mb-2 opacity-50" />
+              <p className="text-sm">이미지가 없습니다</p>
             </div>
+          )}
+        </div>
 
-            {/* 작성자 */}
-            <div className="flex items-center gap-3 pb-4 border-b border-theme-100">
-              <div className="w-10 h-10 gradient-theme rounded-full flex items-center justify-center text-white font-bold">
-                {((coupleUsers?.find(u => u.uid === post.author)?.name) || '나').charAt(0)}
+        {/* 컨텐츠 섹션 (화이트 카드) */}
+        <div className="flex-1 bg-white p-5 sm:p-8 space-y-5 rounded-t-3xl -mt-6 relative z-20 min-h-[300px]">
+          {/* 핸들바 (모바일 느낌) */}
+          <div className="w-12 h-1 bg-gray-200 rounded-full mx-auto sm:hidden mb-2" />
+
+          {/* 날짜 및 무드 */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
+                <Icon name="calendar" size={14} />
+                {new Date(post.date).toLocaleDateString()}
               </div>
-              <div>
-                <p className="font-bold text-primary">{(coupleUsers?.find(u => u.uid === post.author)?.name) || '나'}의 기록</p>
-                <p className="text-xs text-secondary">{settings.coupleName}</p>
-              </div>
-            </div>
-
-            {/* 본문 */}
-            <p className="text-lg sm:text-xl leading-relaxed text-primary whitespace-pre-wrap">{post.content}</p>
-
-            {/* 썸네일 목록 */}
-            {media.length > 1 && (
-              <div className="pt-4 border-t border-theme-100">
-                <p className="text-sm font-bold text-secondary mb-3">모든 사진/동영상</p>
-                <div className="flex gap-2 overflow-x-auto pb-2">
-                  {media.map((m, idx) => (
-                    <button key={idx} onClick={() => setCurrentIndex(idx)}
-                      className={`relative flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden transition-all ${idx === currentIndex ? 'ring-3 ring-theme-500 scale-105' : 'opacity-70 hover:opacity-100'
-                        }`}>
-                      {m.type === 'video' ? (
-                        <video src={m.url} className="w-full h-full object-cover" muted />
-                      ) : (
-                        <img src={m.url} className="w-full h-full object-cover" alt="" />
-                      )}
-                      {m.type === 'video' && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                          <Icon name="play" size={16} className="text-white" />
-                        </div>
-                      )}
-                    </button>
-                  ))}
+              {post.location && (
+                <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
+                  <span className="w-1 h-1 rounded-full bg-gray-300" />
+                  <Icon name="map-pin" size={14} />
+                  {post.location}
                 </div>
-              </div>
-            )}
-
-            {/* 편집 모드일 때 수정/삭제 버튼 */}
-            {isEditMode && (
-              <div className="flex gap-3 pt-4 border-t border-theme-100">
-                <button
-                  onClick={onEdit}
-                  className="flex-1 py-4 rounded-2xl bg-theme-100 text-theme-600 font-bold btn-bounce flex items-center justify-center gap-2 text-lg"
-                >
-                  <Icon name="pencil" size={20} /> 수정하기
-                </button>
-                <button
-                  onClick={onDelete}
-                  className="flex-1 py-4 rounded-2xl bg-red-100 text-red-600 font-bold btn-bounce flex items-center justify-center gap-2 text-lg"
-                >
-                  <Icon name="trash-2" size={20} /> 삭제하기
-                </button>
-              </div>
-            )}
+              )}
+            </div>
+            <div className={`px-3 py-1 rounded-full border text-xs font-bold flex items-center gap-1 ${moodInfo.bg} ${moodInfo.color} border-transparent`}>
+              <span>{moodInfo.emoji}</span> {moodInfo.label}
+            </div>
           </div>
+
+          {/* 내용 */}
+          <div className="prose prose-sm sm:prose-base max-w-none">
+            <p className="text-gray-800 leading-relaxed whitespace-pre-wrap text-base sm:text-lg font-normal tracking-wide">
+              {post.content}
+            </p>
+          </div>
+
+          {/* 미디어 썸네일 리스트 (PC에서만, 혹은 더보기로?) */}
+          {media.length > 1 && (
+            <div className="pt-4 border-t border-gray-100">
+              <p className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">Gallery</p>
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                {media.map((m, idx) => (
+                  <button key={idx} onClick={() => setCurrentIndex(idx)}
+                    className={`relative w-16 h-16 shrink-0 rounded-lg overflow-hidden transition-all ${idx === currentIndex ? 'ring-2 ring-black opacity-100' : 'opacity-50 hover:opacity-100'}`}>
+                    {m.type === 'video' ? <video src={m.url} className="w-full h-full object-cover" /> : <img src={m.url} className="w-full h-full object-cover" alt="" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 액션 버튼 */}
+          {isEditMode && (
+            <div className="flex gap-3 pt-4 mt-auto">
+              <button onClick={onEdit} className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 rounded-xl font-bold text-gray-700 transition-colors flex items-center justify-center gap-2">
+                <Icon name="pencil" size={16} /> 수정
+              </button>
+              <button onClick={onDelete} className="flex-1 py-3 bg-red-50 hover:bg-red-100 rounded-xl font-bold text-red-600 transition-colors flex items-center justify-center gap-2">
+                <Icon name="trash" size={16} /> 삭제
+              </button>
+            </div>
+          )}
         </div>
       </motion.div>
-      {/* 이미지 확대 뷰 */}
+
+      {/* 이미지 전체화면 확대 */}
       {zoomImage && <ImageZoom src={zoomImage} onClose={() => setZoomImage(null)} />}
     </motion.div>
   );
