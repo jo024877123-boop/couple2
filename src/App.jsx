@@ -1542,6 +1542,12 @@ const App = () => {
             onEdit={() => { setEditingPost({ ...selectedPost }); setSelectedPost(null); }}
             onDelete={() => { setDeleteConfirm(selectedPost.id); setSelectedPost(null); }}
             coupleUsers={coupleUsers}
+            currentUser={currentUser}
+            onUpdatePost={(updatedPost) => {
+              const newPosts = (settings.posts || []).map(p => p.id === updatedPost.id ? updatedPost : p);
+              handleSettingsUpdate({ ...settings, posts: newPosts });
+              setSelectedPost(updatedPost);
+            }}
           />
         )}
       </AnimatePresence>
@@ -2167,7 +2173,249 @@ const App = () => {
 
 
 // 상세 보기 컴포넌트 (Instagram Style - Native Scroll)
-function DetailView({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, onDelete, coupleUsers }) {
+// 상세 보기 컴포넌트 (Instagram Style - Native Scroll with Comments)
+function DetailView({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, onDelete, coupleUsers, currentUser, onUpdatePost }) {
+  const media = post.media || [];
+  const moodInfo = getMoodInfo(post.mood);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [zoomImage, setZoomImage] = useState(null);
+
+  // 댓글 관련 상태
+  const [showComments, setShowComments] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const comments = post.comments || [];
+
+  // Scroll listener for pagination dots
+  const handleScroll = (e) => {
+    const scrollLeft = e.target.scrollLeft;
+    const width = e.target.clientWidth;
+    const index = Math.round(scrollLeft / width);
+    setCurrentImageIndex(index);
+  };
+
+  const handleAddComment = (e) => {
+    e.preventDefault();
+    if (!commentText.trim()) return;
+
+    const newComment = {
+      id: Date.now().toString(),
+      author: currentUser?.uid,
+      text: commentText,
+      date: new Date().toISOString()
+    };
+
+    // 부모 컴포넌트를 통해 업데이트 요청
+    if (onUpdatePost) {
+      onUpdatePost({
+        ...post,
+        comments: [...comments, newComment]
+      });
+    }
+    setCommentText('');
+  };
+
+  const handleDeleteComment = (commentId) => {
+    if (!confirm('댓글을 삭제하시겠습니까?')) return;
+    if (onUpdatePost) {
+      onUpdatePost({
+        ...post,
+        comments: comments.filter(c => c.id !== commentId)
+      });
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] bg-black sm:bg-black/80 flex items-center justify-center animate-fadeIn">
+      {/* Backdrop (Click to close on PC) */}
+      <div className="absolute inset-0 hidden sm:block" onClick={onClose} />
+
+      {/* Main Container */}
+      <div className="relative w-full h-full sm:h-[85vh] sm:max-w-[450px] bg-white sm:rounded-[2rem] shadow-2xl overflow-y-auto overflow-x-hidden flex flex-col scrollbar-hide">
+
+        {/* 1. Header (Sticky) */}
+        <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md px-4 py-3 flex items-center justify-between border-b border-gray-100/50">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full gradient-theme flex items-center justify-center text-white text-xs font-bold ring-2 ring-white shadow-sm">
+              {((coupleUsers?.find(u => u.uid === post.author)?.name) || '나').charAt(0)}
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-bold text-gray-900 leading-none">
+                {(coupleUsers?.find(u => u.uid === post.author)?.name) || '나'}
+              </span>
+              <span className="text-[10px] text-gray-400 font-medium mt-0.5">
+                {post.location || '어딘가에서'}
+              </span>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 -mr-2 text-gray-800 hover:bg-gray-100 rounded-full transition-colors">
+            <Icon name="x" size={24} />
+          </button>
+        </div>
+
+        {/* 2. Media Section (Horizontal Snap Scroll) */}
+        <div className="relative w-full bg-gray-100 group">
+          {media.length > 0 ? (
+            <div
+              className="flex overflow-x-auto snap-x snap-mandatory w-full scrollbar-hide touch-pan-x"
+              onScroll={handleScroll}
+              style={{ aspectRatio: '1/1' }} // 인스타 정방형 비율 유지
+            >
+              {media.map((m, i) => (
+                <div key={i} className="flex-shrink-0 w-full h-full snap-center flex items-center justify-center bg-black relative"
+                  style={{ minWidth: '100%', scrollSnapStop: 'always' }}>
+                  {m.type === 'video' ? (
+                    <video src={m.url} className="w-full h-full object-cover" controls autoPlay muted loop playsInline />
+                  ) : (
+                    <div className="relative w-full h-full">
+                      <img
+                        src={m.url}
+                        className="w-full h-full object-cover"
+                        alt=""
+                        onClick={(e) => { e.stopPropagation(); setZoomImage(m.url); }}
+                      />
+                      {/* 돋보기 버튼 (확대 유도) */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setZoomImage(m.url); }}
+                        className="absolute bottom-3 right-3 p-2 bg-black/50 text-white rounded-full backdrop-blur-md hover:bg-black/70 transition-all pointer-events-auto"
+                      >
+                        <Icon name="maximize-2" size={16} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="w-full aspect-square flex flex-col items-center justify-center text-gray-300 bg-gray-50">
+              <Icon name="image-off" size={48} className="mb-2" />
+              <span className="text-xs">이미지 없음</span>
+            </div>
+          )}
+
+          {/* Pagination Dots (Overlay) */}
+          {media.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10 px-3 py-1.5 bg-black/30 backdrop-blur-sm rounded-full pointer-events-none">
+              {media.map((_, i) => (
+                <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === currentImageIndex ? 'w-4 bg-white' : 'w-1.5 bg-white/50'}`} />
+              ))}
+            </div>
+          )}
+
+          {/* Media Count Badge */}
+          {media.length > 1 && (
+            <div className="absolute top-4 right-4 bg-black/50 backdrop-blur px-2 py-1 rounded-full text-white text-[10px] font-bold pointer-events-none">
+              {currentImageIndex + 1}/{media.length}
+            </div>
+          )}
+        </div>
+
+        {/* 3. Content Section */}
+        <div className="px-4 py-4 pb-safe sm:pb-8 flex-1 flex flex-col bg-white min-h-[50vh]">
+          {/* Utils Bar (댓글 버튼만 유지) */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
+              <button onClick={() => setShowComments(!showComments)} className={`transition-colors ${showComments ? 'text-theme-500' : 'text-gray-800'}`}>
+                <Icon name="message-circle" size={28} /> {/* 조금 더 키움 */}
+              </button>
+            </div>
+            <div className={`px-2.5 py-1 rounded-full border text-[10px] font-bold flex items-center gap-1 ${moodInfo.bg} ${moodInfo.color} border-transparent`}>
+              <span>{moodInfo.emoji}</span> {moodInfo.label}
+            </div>
+          </div>
+
+          {/* Location */}
+          {post.location && (
+            <p className="text-xs font-bold text-gray-800 mb-1">{post.location}</p>
+          )}
+
+          {/* Text Content */}
+          <div className="mb-4">
+            <span className="font-bold text-sm mr-2">{(coupleUsers?.find(u => u.uid === post.author)?.name) || '나'}</span>
+            <span className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">
+              {post.content}
+            </span>
+          </div>
+
+          {/* 댓글 미리보기 (1개만) - 인스타 스타일 */}
+          {!showComments && comments.length > 0 && (
+            <button onClick={() => setShowComments(true)} className="text-xs text-gray-400 font-medium mb-2 text-left">
+              댓글 {comments.length}개 모두 보기
+            </button>
+          )}
+
+          {/* Date */}
+          <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-6">
+            {new Date(post.date).toLocaleDateString()}
+          </p>
+
+          {/* 댓글 섹션 (토글됨) */}
+          {showComments && (
+            <div className="mt-2 mb-6 border-t border-gray-100 pt-4 animate-fadeIn">
+              <h4 className="text-xs font-bold text-gray-500 mb-3">댓글</h4>
+
+              {/* 댓글 목록 */}
+              <div className="space-y-3 mb-4 max-h-[200px] overflow-y-auto">
+                {comments.length === 0 ? (
+                  <p className="text-xs text-center text-gray-300 py-4">아직 댓글이 없습니다.</p>
+                ) : (
+                  comments.map(comment => (
+                    <div key={comment.id} className="flex gap-2 items-start group">
+                      <span className="text-xs font-bold text-gray-800 mt-0.5">
+                        {(coupleUsers?.find(u => u.uid === comment.author)?.name) || '알 수 없음'}
+                      </span>
+                      <div className="flex-1">
+                        <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap">{comment.text}</p>
+                        <p className="text-[10px] text-gray-300 mt-0.5">{new Date(comment.date).toLocaleDateString()}</p>
+                      </div>
+                      {currentUser?.uid === comment.author && (
+                        <button onClick={() => handleDeleteComment(comment.id)} className="text-gray-300 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Icon name="x" size={12} />
+                        </button>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* 댓글 입력 */}
+              <form onSubmit={handleAddComment} className="flex gap-2">
+                <input
+                  type="text"
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  placeholder="댓글 달기..."
+                  className="flex-1 bg-gray-50 border border-gray-200 rounded-full px-4 py-2 text-xs focus:border-theme-300 outline-none transition-colors"
+                />
+                <button
+                  type="submit"
+                  disabled={!commentText.trim()}
+                  className="text-theme-500 font-bold text-xs px-2 disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  게시
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* Edit/Delete Buttons */}
+          {isEditMode && (
+            <div className="mt-auto pt-6 border-t border-gray-100 flex gap-2">
+              <button onClick={onEdit} className="flex-1 py-3 bg-gray-50 hover:bg-gray-100 rounded-xl font-bold text-gray-600 text-sm flex items-center justify-center gap-1.5 transition-colors">
+                <Icon name="pencil" size={14} /> 수정
+              </button>
+              <button onClick={onDelete} className="flex-1 py-3 bg-red-50 hover:bg-red-100 rounded-xl font-bold text-red-500 text-sm flex items-center justify-center gap-1.5 transition-colors">
+                <Icon name="trash" size={14} /> 삭제
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// (Deprecated) 상세 보기 컴포넌트 
+function DetailViewDeprecated({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, onDelete, coupleUsers }) {
   const media = post.media || [];
   const moodInfo = getMoodInfo(post.mood);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
