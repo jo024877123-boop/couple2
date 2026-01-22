@@ -2187,9 +2187,10 @@ function DetailView({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, 
 
   const slideVariants = {
     enter: (direction) => ({
-      x: direction > 0 ? 300 : -300,
+      x: direction > 0 ? '100%' : '-100%',
       opacity: 0,
-      scale: 0.9
+      scale: 0.9,
+      zIndex: 0
     }),
     center: {
       zIndex: 1,
@@ -2199,7 +2200,7 @@ function DetailView({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, 
     },
     exit: (direction) => ({
       zIndex: 0,
-      x: direction < 0 ? 300 : -300,
+      x: direction < 0 ? '100%' : '-100%',
       opacity: 0,
       scale: 0.9
     })
@@ -2285,10 +2286,9 @@ function DetailView({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, 
           )}
         </div>
 
-        {/* Pagination Dots */}
+        {/* Pagination Dots - Moved to bottom-24 to be visible when sheet is collapsed */}
         {media.length > 1 && (
-          <div className="absolute bottom-[35%] left-1/2 -translate-x-1/2 flex gap-1.5 z-10 pointer-events-none transition-opacity duration-300"
-            style={{ opacity: sheetState === 'top' ? 0 : 1 }}>
+          <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex gap-1.5 z-30 pointer-events-none transition-all duration-300">
             {media.map((_, i) => (
               <div key={i} className={`h-1.5 rounded-full transition-all shadow-sm ${i === ((imageIndex % media.length + media.length) % media.length) ? 'w-6 bg-white' : 'w-1.5 bg-white/40'}`} />
             ))}
@@ -2300,24 +2300,26 @@ function DetailView({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, 
       <motion.div
         drag="y"
         dragConstraints={{ top: -600, bottom: 0 }}
-        dragElastic={0.2}
+        dragElastic={0.05} // More rigid feel
+        dragMomentum={false} // Prevent flying away
         onDragEnd={(e, { offset, velocity }) => {
-          if (offset.y > 100 || velocity.y > 200) {
-            sheetControls.start({ y: "calc(100% - 100px)" }); // Collapsed
+          const threshold = 100;
+          if (offset.y > threshold || velocity.y > 500) {
+            sheetControls.start({ y: "calc(100% - 130px)" }); // Collapsed (Show more image)
             setSheetState('bottom');
-          } else if (offset.y < -100 || velocity.y < -200) {
+          } else if (offset.y < -threshold || velocity.y < -500) {
             sheetControls.start({ y: 0 }); // Expanded
             setSheetState('top');
           } else {
-            // Snap to nearest
-            if (sheetState === 'bottom') sheetControls.start({ y: "calc(100% - 100px)" });
+            // Snap back logic
+            if (sheetState === 'bottom') sheetControls.start({ y: "calc(100% - 130px)" });
             else if (sheetState === 'top') sheetControls.start({ y: 0 });
             else sheetControls.start({ y: "40vh" });
           }
         }}
         initial={{ y: "45vh" }}
         animate={sheetControls}
-        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+        transition={{ type: "spring", damping: 30, stiffness: 350, mass: 0.8 }} // Faster, snappier
         className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[2rem] shadow-[0_-10px_40px_rgba(0,0,0,0.3)] flex flex-col z-40 touch-none h-[85vh]"
       >
         {/* Handle Bar */}
