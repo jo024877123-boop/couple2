@@ -2276,7 +2276,7 @@ const Modal = ({ children, onClose, small = false }) => {
               onClose();
             }
           }}
-          className={`pointer-events-auto relative w-full ${small ? 'max-w-sm' : 'max-w-lg'} card-bg rounded-t-[2rem] rounded-b-none sm:rounded-[2rem] shadow-2xl p-6 overflow-y-auto max-h-[90vh] pb-safe sm:pb-6`}
+          className={`pointer-events-auto relative w-full ${small ? 'max-w-sm' : 'max-w-lg'} card-bg rounded-t-[2rem] rounded-b-none sm:rounded-[2rem] shadow-2xl p-6 overflow-y-auto overscroll-contain touch-pan-y max-h-[90vh] pb-safe sm:pb-6`}
         >
           {/* Mobile Handle Bar (Drag Target) */}
           <div
@@ -2419,7 +2419,7 @@ const PostForm = ({ post, setPost, onSubmit, submitLabel }) => {
       <div>
         <label className="block text-sm font-bold text-primary mb-2">사진/동영상</label>
         <div
-          className={`file-upload-zone rounded-2xl p-6 text-center cursor-pointer ${isDragging ? 'dragover' : ''}`}
+          className={`file-upload-zone rounded-2xl p-6 text-center cursor-pointer touch-pan-y ${isDragging ? 'dragover' : ''}`}
           onClick={() => fileInputRef.current?.click()}
           onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
           onDragLeave={() => setIsDragging(false)}
@@ -2434,7 +2434,7 @@ const PostForm = ({ post, setPost, onSubmit, submitLabel }) => {
 
         {/* 미디어 미리보기 */}
         {post.media.length > 0 && (
-          <div className="mt-3">
+          <div className="mt-3 touch-pan-y">
             <p className="text-xs text-secondary mb-2">클릭하여 대표 이미지 선택</p>
             <div className="flex flex-wrap gap-2">
               {post.media.map((m, idx) => (
