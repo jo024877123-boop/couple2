@@ -2350,19 +2350,16 @@ const PostForm = ({ post, setPost, onSubmit, submitLabel, loading }) => {
       const isVideo = file.type.startsWith('video/');
 
       if (isVideo) {
-        // 동영상은 크기 제한 (50MB)
-        if (file.size > 50 * 1024 * 1024) {
-          alert('동영상은 50MB 이하만 업로드 가능합니다.');
+        // 동영상은 크기 제한 (100MB)
+        if (file.size > 100 * 1024 * 1024) {
+          alert('동영상은 100MB 이하만 업로드 가능합니다.');
           return;
         }
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          setPost(prev => ({
-            ...prev,
-            media: [...prev.media, { url: e.target.result, type: 'video', name: file.name, file: file }]
-          }));
-        };
-        reader.readAsDataURL(file);
+        // Use URL.createObjectURL for better memory efficiency with videos
+        setPost(prev => ({
+          ...prev,
+          media: [...prev.media, { url: URL.createObjectURL(file), type: 'video', name: file.name, file: file }]
+        }));
       } else {
         // 이미지는 압축 처리
         const img = new Image();
@@ -2371,7 +2368,7 @@ const PostForm = ({ post, setPost, onSubmit, submitLabel, loading }) => {
           img.src = e.target.result;
           img.onload = () => {
             const canvas = document.createElement('canvas');
-            const maxSize = 1200;
+            const maxSize = 1024; // Reduce max size for mobile stability
             let { width, height } = img;
 
             if (width > maxSize || height > maxSize) {
@@ -2389,7 +2386,7 @@ const PostForm = ({ post, setPost, onSubmit, submitLabel, loading }) => {
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
 
-            const compressedUrl = canvas.toDataURL('image/jpeg', 0.8);
+            const compressedUrl = canvas.toDataURL('image/jpeg', 0.7); // Reduce quality
             setPost(prev => ({
               ...prev,
               media: [...prev.media, { url: compressedUrl, type: 'image', name: file.name }]

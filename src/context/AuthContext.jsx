@@ -8,7 +8,9 @@ import {
     GoogleAuthProvider,
     signInWithPopup,
     sendEmailVerification,
-    sendPasswordResetEmail
+    sendPasswordResetEmail,
+    setPersistence,
+    browserLocalPersistence
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, serverTimestamp, getDocs, query, where, onSnapshot } from 'firebase/firestore';
 
@@ -47,6 +49,8 @@ export function AuthProvider({ children }) {
 
     // ========== LOGIN ==========
     async function login(email, password) {
+        // Local persistence is default, but explicit setting is good
+        await setPersistence(auth, browserLocalPersistence);
         const res = await signInWithEmailAndPassword(auth, email, password);
         const user = res.user;
 
@@ -62,6 +66,7 @@ export function AuthProvider({ children }) {
     // ========== GOOGLE LOGIN ==========
     async function loginWithGoogle() {
         try {
+            await setPersistence(auth, browserLocalPersistence);
             const provider = new GoogleAuthProvider();
             const res = await signInWithPopup(auth, provider);
             const user = res.user;
