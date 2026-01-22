@@ -527,6 +527,29 @@ const App = () => {
       return;
     }
 
+    // Helper to process media uploads consistently
+    const processMediaFiles = async (mediaList) => {
+      const processed = [];
+      for (const m of mediaList) {
+        if (m.file) {
+          // 1. File Object (New Upload)
+          const result = await uploadMedia(m.file, `couples/${userData.coupleId}/posts`);
+          processed.push(result);
+        } else if (m.url && (m.url.startsWith('data:') || m.url.startsWith('blob:'))) {
+          // 2. Base64 or Blob URL (Needs conversion)
+          const res = await fetch(m.url);
+          const blob = await res.blob();
+          const file = new File([blob], m.name || `file_${Date.now()}`, { type: m.type === 'video' ? 'video/mp4' : 'image/jpeg' });
+          const result = await uploadMedia(file, `couples/${userData.coupleId}/posts`);
+          processed.push(result);
+        } else {
+          // 3. Existing URL
+          processed.push(m);
+        }
+      }
+      return processed;
+    };
+
     // 3. Confirm Save
     if (!confirm("소중한 추억을 저장하시겠습니까?")) return;
 
@@ -534,27 +557,7 @@ const App = () => {
 
     try {
       // Media Upload Logic
-      const processedMedia = [];
-      if (newPost.media.length > 0) {
-        // Uploading indicator could be added here
-        for (const m of newPost.media) {
-          if (m.file) {
-            // Upload File object
-            const result = await uploadMedia(m.file, `couples/${userData.coupleId}/posts`);
-            processedMedia.push(result);
-          } else if (m.url && m.url.startsWith('data:')) {
-            // Convert Base64 to Blob and Upload
-            const res = await fetch(m.url);
-            const blob = await res.blob();
-            const file = new File([blob], m.name || `file_${Date.now()}`, { type: m.type === 'video' ? 'video/mp4' : 'image/jpeg' });
-            const result = await uploadMedia(file, `couples/${userData.coupleId}/posts`);
-            processedMedia.push(result);
-          } else {
-            // Assume it's already a URL
-            processedMedia.push(m);
-          }
-        }
-      }
+      const processedMedia = await processMediaFiles(newPost.media);
 
       const post = {
         ...newPost,
@@ -608,13 +611,41 @@ const App = () => {
 
     if (!confirm('기록을 수정하시겠습니까?')) return;
 
+    setIsUploading(true); // Start loading
+
     try {
-      await updatePost(userData.coupleId, editingPost.id, editingPost);
+      // Process media uploads for edited post
+      // Helper to process media uploads consistently
+      const processMediaFiles = async (mediaList) => {
+        const processed = [];
+        for (const m of mediaList) {
+          if (m.file) {
+            const result = await uploadMedia(m.file, `couples/${userData.coupleId}/posts`);
+            processed.push(result);
+          } else if (m.url && (m.url.startsWith('data:') || m.url.startsWith('blob:'))) {
+            const res = await fetch(m.url);
+            const blob = await res.blob();
+            const file = new File([blob], m.name || `file_${Date.now()}`, { type: m.type === 'video' ? 'video/mp4' : 'image/jpeg' });
+            const result = await uploadMedia(file, `couples/${userData.coupleId}/posts`);
+            processed.push(result);
+          } else {
+            processed.push(m);
+          }
+        }
+        return processed;
+      };
+
+      const processedMedia = await processMediaFiles(editingPost.media);
+      const hostPost = { ...editingPost, media: processedMedia };
+
+      await updatePost(userData.coupleId, editingPost.id, hostPost);
       alert('성공적으로 수정되었습니다! ✏️');
       setEditingPost(null);
     } catch (err) {
       console.error(err);
       alert('수정 중 오류가 발생했습니다: ' + err.message);
+    } finally {
+      setIsUploading(false); // End loading
     }
   };
 
