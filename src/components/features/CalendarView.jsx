@@ -540,7 +540,7 @@ const CalendarView = ({
                                 initial={{ scale: 0.95, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
                                 exit={{ scale: 0.95, opacity: 0 }}
-                                className="pointer-events-auto relative w-full max-w-lg card-bg rounded-2xl shadow-2xl overflow-hidden border border-theme-100 max-h-[85vh] flex flex-col"
+                                className="pointer-events-auto relative w-full max-w-2xl card-bg rounded-2xl shadow-2xl overflow-hidden border border-theme-100 max-h-[85vh] flex flex-col"
                                 onClick={(e) => e.stopPropagation()}
                             >
                                 <div className="p-5 overflow-y-auto">

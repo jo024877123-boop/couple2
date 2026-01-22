@@ -3288,18 +3288,7 @@ const ImageZoom = ({ src, onClose }) => (
               />
             </TransformComponent>
 
-            {/* Zoom Controls Overlay */}
-            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-4 pointer-events-auto">
-              <button onClick={() => zoomOut()} className="p-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all">
-                <Icon name="minus" size={24} />
-              </button>
-              <button onClick={() => resetTransform()} className="p-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all">
-                <Icon name="refresh-cw" size={24} />
-              </button>
-              <button onClick={() => zoomIn()} className="p-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all">
-                <Icon name="plus" size={24} />
-              </button>
-            </div>
+
           </>
         )}
       </TransformWrapper>
