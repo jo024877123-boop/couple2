@@ -948,7 +948,10 @@ const App = () => {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 {posts.flatMap(post => {
                   if (post.media && post.media.length > 0) {
-                    return post.media.map((m, idx) => ({ ...m, postId: post.id, post, idx }));
+                    // 대표 이미지 하나만 반환 (다중 업로드 시 중복 표시 방지)
+                    const thumbIdx = (post.thumbnailIndex !== undefined && post.media[post.thumbnailIndex]) ? post.thumbnailIndex : 0;
+                    const m = post.media[thumbIdx];
+                    return [{ ...m, postId: post.id, post, idx: thumbIdx, mediaCount: post.media.length }];
                   } else {
                     // 텍스트 포스트 처리
                     if (!post.content) return [];
@@ -973,6 +976,14 @@ const App = () => {
                       </div>
                     ) : (
                       <img src={item.url} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt="" />
+                    )}
+
+                    {/* 여러 장일 경우 표시 */}
+                    {item.mediaCount > 1 && (
+                      <div className="absolute top-2 right-2 bg-black/40 backdrop-blur px-2 py-1 rounded-full text-[10px] font-bold text-white flex items-center gap-1 z-10 pointer-events-none">
+                        <Icon name="layers" size={12} />
+                        {item.mediaCount}
+                      </div>
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                       <div className="absolute bottom-3 left-3 right-3">
