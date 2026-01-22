@@ -283,7 +283,8 @@ const BalanceGameCard = ({ settings, coupleUsers, currentUser, onUpdateSettings,
 
             // UI 피드백
             // alert(alertMessage); // 너무 잦은 alert 방지, 필요하면 toast로 대체하거나 생략
-            if (!isEditMode) alert(alertMessage); // 첫 저장시에만 축하
+            if (!isEditMode) alert(alertMessage + "\n\n(📚 히스토리에도 안전하게 기록되었습니다!)"); // 첫 저장시에만 축하
+            else alert("수정된 내용이 저장되었습니다.");
 
             setIsInputOpen(false);
 

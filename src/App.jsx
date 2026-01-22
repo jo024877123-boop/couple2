@@ -2921,21 +2921,21 @@ const PostForm = ({ post, setPost, onSubmit, submitLabel, loading }) => {
 };
 
 const ImageZoom = ({ src, onClose }) => (
-  <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={onClose}>
-    <div className="absolute inset-0 bg-black/90" />
+  <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 touch-none" onClick={onClose}>
+    <div className="absolute inset-0 bg-black/95 backdrop-blur-sm" />
     <img
       src={src}
-      className="relative max-w-full max-h-full object-contain animate-scaleIn"
+      className="relative max-w-full max-h-full object-contain animate-scaleIn shadow-2xl"
       alt=""
+      // Simple pinch-to-zoom simulation or just preventing click close
       onClick={(e) => e.stopPropagation()}
     />
     <button
       onClick={onClose}
-      className="absolute top-4 right-4 w-12 h-12 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white btn-bounce"
+      className="absolute top-4 right-4 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white backdrop-blur-md transition-all"
     >
       <Icon name="x" size={24} />
     </button>
-    <p className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/70 text-sm">클릭하여 닫기</p>
   </div>
 );
 
