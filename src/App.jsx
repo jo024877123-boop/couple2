@@ -906,21 +906,24 @@ const App = () => {
                     }}
                   />
                   {/* 밸런스 게임 기록 보기 버튼 */}
-                  {balanceHistory.length > 0 && (
-                    <button
-                      onClick={() => setIsBalanceHistoryOpen(true)}
-                      className="w-full mb-4 py-3 px-4 card-bg rounded-xl border border-theme-100 flex items-center justify-between hover:bg-theme-50 transition-all"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl">📚</span>
-                        <div className="text-left">
-                          <p className="text-sm font-bold text-primary">밸런스 게임 기록</p>
-                          <p className="text-xs text-secondary">지난 {balanceHistory.length}개의 게임 결과 보기</p>
-                        </div>
+                  {/* 밸런스 게임 기록 보기 버튼 */}
+                  <button
+                    onClick={() => setIsBalanceHistoryOpen(true)}
+                    className="w-full mb-4 py-3 px-4 card-bg rounded-xl border border-theme-100 flex items-center justify-between hover:bg-theme-50 transition-all"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">📚</span>
+                      <div className="text-left">
+                        <p className="text-sm font-bold text-primary">밸런스 게임 기록</p>
+                        <p className="text-xs text-secondary">
+                          {balanceHistory.length > 0
+                            ? `지난 ${balanceHistory.length}개의 게임 결과 보기`
+                            : '완료된 게임들을 이곳에서 모아보세요'}
+                        </p>
                       </div>
-                      <Icon name="chevron-right" size={20} className="text-gray-400" />
-                    </button>
-                  )}
+                    </div>
+                    <Icon name="chevron-right" size={20} className="text-gray-400" />
+                  </button>
                 </>
               )}
               {posts.length === 0 ? (
