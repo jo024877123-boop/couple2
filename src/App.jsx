@@ -1543,10 +1543,17 @@ const App = () => {
             onDelete={() => { setDeleteConfirm(selectedPost.id); setSelectedPost(null); }}
             coupleUsers={coupleUsers}
             currentUser={currentUser}
-            onUpdatePost={(updatedPost) => {
-              const newPosts = (settings.posts || []).map(p => p.id === updatedPost.id ? updatedPost : p);
-              handleSettingsUpdate({ ...settings, posts: newPosts });
+            onUpdatePost={async (updatedPost) => {
+              // Optimistic Update
               setSelectedPost(updatedPost);
+              setPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p));
+
+              try {
+                await updatePost(userData.coupleId, updatedPost.id, updatedPost);
+              } catch (e) {
+                console.error("Comment update failed:", e);
+                alert("댓글 저장에 실패했습니다.");
+              }
             }}
           />
         )}
@@ -2410,6 +2417,11 @@ function DetailView({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, 
           )}
         </div>
       </div>
+
+      {/* Image Zoom Overlay */}
+      {zoomImage && (
+        <ImageZoom src={zoomImage} onClose={() => setZoomImage(null)} />
+      )}
     </div>
   );
 }
