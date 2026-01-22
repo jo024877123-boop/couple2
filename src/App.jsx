@@ -532,18 +532,33 @@ const App = () => {
       const processed = [];
       for (const m of mediaList) {
         if (m.file) {
-          // 1. File Object (New Upload)
-          const result = await uploadMedia(m.file, `couples/${userData.coupleId}/posts`);
-          processed.push(result);
+          try {
+            const result = await uploadMedia(m.file, `couples/${userData.coupleId}/posts`);
+            processed.push(result);
+          } catch (e) {
+            console.error("Upload failed for file:", m.name, e);
+            throw new Error(`이미지 업로드 실패: ${m.name}`);
+          }
         } else if (m.url && (m.url.startsWith('data:') || m.url.startsWith('blob:'))) {
-          // 2. Base64 or Blob URL (Needs conversion)
-          const res = await fetch(m.url);
-          const blob = await res.blob();
-          const file = new File([blob], m.name || `file_${Date.now()}`, { type: m.type === 'video' ? 'video/mp4' : 'image/jpeg' });
-          const result = await uploadMedia(file, `couples/${userData.coupleId}/posts`);
-          processed.push(result);
+          try {
+            const res = await fetch(m.url);
+            const blob = await res.blob();
+            // Create a file with a proper extension based on type
+            const ext = m.type === 'video' ? 'mp4' : 'jpg';
+            const file = new File([blob], m.name || `file_${Date.now()}.${ext}`, { type: m.type === 'video' ? 'video/mp4' : 'image/jpeg' });
+
+            const result = await uploadMedia(file, `couples/${userData.coupleId}/posts`);
+            processed.push(result);
+          } catch (e) {
+            console.error("Conversion/Upload failed for url:", m.url.substring(0, 50), e);
+            throw new Error("이미지 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+          }
         } else {
-          // 3. Existing URL
+          // Safety Check: If m is too big (e.g. > 10KB string), it might be a raw base64 that wasn't caught
+          if (JSON.stringify(m).length > 20000) { // 20KB limit for safety
+            console.error("Large data detected in media array:", m);
+            throw new Error("이미지 용량이 너무 큽니다. 다시 선택해주세요.");
+          }
           processed.push(m);
         }
       }
@@ -2399,7 +2414,7 @@ const PostForm = ({ post, setPost, onSubmit, submitLabel, loading }) => {
           img.src = e.target.result;
           img.onload = () => {
             const canvas = document.createElement('canvas');
-            const maxSize = 1024; // Reduce max size for mobile stability
+            const maxSize = 800; // Aggressively reduce max size for mobile stability
             let { width, height } = img;
 
             if (width > maxSize || height > maxSize) {
@@ -2417,7 +2432,7 @@ const PostForm = ({ post, setPost, onSubmit, submitLabel, loading }) => {
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
 
-            const compressedUrl = canvas.toDataURL('image/jpeg', 0.7); // Reduce quality
+            const compressedUrl = canvas.toDataURL('image/jpeg', 0.6); // Reduce quality further
             setPost(prev => ({
               ...prev,
               media: [...prev.media, { url: compressedUrl, type: 'image', name: file.name }]
