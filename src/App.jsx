@@ -600,8 +600,17 @@ const App = () => {
   const handleEditPost = async (e) => {
     e.preventDefault();
     if (!editingPost) return;
-    await updatePost(userData.coupleId, editingPost.id, editingPost);
-    setEditingPost(null);
+
+    if (!confirm('기록을 수정하시겠습니까?')) return;
+
+    try {
+      await updatePost(userData.coupleId, editingPost.id, editingPost);
+      alert('성공적으로 수정되었습니다! ✏️');
+      setEditingPost(null);
+    } catch (err) {
+      console.error(err);
+      alert('수정 중 오류가 발생했습니다: ' + err.message);
+    }
   };
 
   const handleDeletePost = async (id) => {
