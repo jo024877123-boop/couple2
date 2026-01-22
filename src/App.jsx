@@ -2209,7 +2209,7 @@ function DetailView({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, 
         </div>
 
         {/* 2. Media Section (Horizontal Snap Scroll) */}
-        <div className="relative w-full bg-gray-100">
+        <div className="relative w-full bg-gray-100 group">
           {media.length > 0 ? (
             <div
               className="flex overflow-x-auto snap-x snap-mandatory w-full scrollbar-hide touch-pan-x"
@@ -2217,11 +2217,19 @@ function DetailView({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, 
               style={{ aspectRatio: '1/1' }} // 인스타 정방형 비율 유지
             >
               {media.map((m, i) => (
-                <div key={i} className="flex-shrink-0 w-full h-full snap-center flex items-center justify-center bg-black relative">
+                <div key={i} className="flex-shrink-0 w-full h-full snap-center flex items-center justify-center bg-black relative" style={{ minWidth: '100%' }}>
                   {m.type === 'video' ? (
-                    <video src={m.url} className="w-full h-full object-contain" controls autoPlay muted loop playsInline />
+                    <video src={m.url} className="w-full h-full object-cover" controls autoPlay muted loop playsInline />
                   ) : (
-                    <img src={m.url} className="w-full h-full object-cover" alt="" />
+                    <img
+                      src={m.url}
+                      className="w-full h-full object-cover cursor-zoom-in active:opacity-90 transition-opacity"
+                      alt=""
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setZoomImage(m.url);
+                      }}
+                    />
                   )}
                 </div>
               ))}
@@ -2235,7 +2243,7 @@ function DetailView({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, 
 
           {/* Pagination Dots (Overlay) */}
           {media.length > 1 && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10 px-3 py-1.5 bg-black/30 backdrop-blur-sm rounded-full">
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10 px-3 py-1.5 bg-black/30 backdrop-blur-sm rounded-full pointer-events-none">
               {media.map((_, i) => (
                 <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === currentImageIndex ? 'w-4 bg-white' : 'w-1.5 bg-white/50'}`} />
               ))}
@@ -2244,7 +2252,7 @@ function DetailView({ post, settings, getMoodInfo, onClose, isEditMode, onEdit, 
 
           {/* Media Count Badge */}
           {media.length > 1 && (
-            <div className="absolute top-4 right-4 bg-black/50 backdrop-blur px-2 py-1 rounded-full text-white text-[10px] font-bold">
+            <div className="absolute top-4 right-4 bg-black/50 backdrop-blur px-2 py-1 rounded-full text-white text-[10px] font-bold pointer-events-none">
               {currentImageIndex + 1}/{media.length}
             </div>
           )}
