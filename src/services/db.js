@@ -226,6 +226,10 @@ export const addBalanceHistory = async (coupleId, record) => {
     }, { merge: true });
 };
 
+export const deleteBalanceHistoryItem = async (coupleId, historyId) => {
+    await deleteDoc(doc(db, `couples/${coupleId}/balance_history`, historyId));
+};
+
 /* --- Dangerous Reset --- */
 export const resetAllCoupleData = async (coupleId) => {
     // 1. Delete all sub-collections

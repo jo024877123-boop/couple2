@@ -1,7 +1,41 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import Icon from '../ui/Icon';
+import { useAuth } from '../../context/AuthContext';
+import { deleteBalanceHistoryItem } from '../../services/db';
 
 const BalanceHistoryView = ({ history = [], coupleUsers = [], onClose }) => {
+    const { userData } = useAuth();
+
+    // 중복 검사 (같은 날짜 + 같은 질문)
+    const duplicates = useMemo(() => {
+        const lookup = {};
+        const dups = [];
+        history.forEach(item => {
+            // 구버전 데이터 호환을 위해 id check
+            const key = `${item.date}_${item.questionId}`;
+            if (lookup[key]) {
+                dups.push(item);
+            } else {
+                lookup[key] = item;
+            }
+        });
+        return dups;
+    }, [history]);
+
+    const handleCleanupDuplicates = async () => {
+        if (!confirm(`중복된 기록 ${duplicates.length}개를 정리하시겠습니까?`)) return;
+
+        try {
+            for (const item of duplicates) {
+                await deleteBalanceHistoryItem(userData.coupleId, item.id);
+            }
+            alert('중복 기록이 정리되었습니다. 깔끔해졌네요! ✨');
+        } catch (e) {
+            console.error(e);
+            alert('정리 중 오류가 발생했습니다.');
+        }
+    };
+
     if (!history || history.length === 0) {
         return (
             <div className="text-center p-8">
@@ -18,10 +52,20 @@ const BalanceHistoryView = ({ history = [], coupleUsers = [], onClose }) => {
     return (
         <div className="space-y-4">
             {/* 헤더 */}
-            <div className="text-center mb-6">
+            <div className="text-center mb-6 relative">
                 <span className="text-4xl mb-2 block">📚</span>
                 <h2 className="font-black text-2xl text-primary">밸런스 게임 기록</h2>
                 <p className="text-secondary text-sm mt-1">우리의 선택들을 돌아보세요</p>
+
+                {/* 중복 정리 버튼 (발견될 때만 표시) */}
+                {duplicates.length > 0 && (
+                    <button
+                        onClick={handleCleanupDuplicates}
+                        className="absolute right-0 top-0 text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-lg border border-orange-200 animate-pulse hover:bg-orange-200"
+                    >
+                        🧹 중복 정리 ({duplicates.length})
+                    </button>
+                )}
             </div>
 
             {/* 통계 */}
