@@ -215,10 +215,15 @@ export const subscribeBalanceHistory = (coupleId, callback) => {
 };
 
 export const addBalanceHistory = async (coupleId, record) => {
-    await addDoc(collection(db, `couples/${coupleId}/balance_history`), {
+    // Use a unique ID based on date and questionId to prevent duplicates
+    const docId = `${record.date}_${record.questionId}`;
+    const docRef = doc(db, `couples/${coupleId}/balance_history`, docId);
+
+    // Use setDoc with merge: true to update if exists, or create if not
+    await setDoc(docRef, {
         ...record,
         completedAt: serverTimestamp()
-    });
+    }, { merge: true });
 };
 
 /* --- Dangerous Reset --- */
